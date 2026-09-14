@@ -171,9 +171,13 @@ export class WebRTCAudioService {
   }
 
   /** Stream TTS through the WebRTC pipeline (low-latency). */
-  speakText(text: string, interrupt = true): void {
+  speakText(text: string, interrupt = true, language?: string): void {
     if (!this.client || !text.trim()) return;
-    this.client.sendClientMessage('speak-tts', { text: text.trim(), interrupt });
+    this.client.sendClientMessage('speak-tts', {
+      text: text.trim(),
+      interrupt,
+      ...(language ? { language } : {}),
+    });
   }
 
   /** Interrupt in-flight pipeline TTS. */

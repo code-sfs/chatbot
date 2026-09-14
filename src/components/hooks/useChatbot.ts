@@ -34,6 +34,11 @@ import {
   buildMicConstraints,
   resolveTtsVoice,
 } from "../../services/voiceConstants";
+import {
+  detectVoiceLanguage,
+  voiceLangToApiHint,
+  voiceLangToTtsBcp47,
+} from "../../services/voiceLanguage";
 import { handleAssignmentChat } from "../flows/assignmentFlow";
 import { handleMessageChat } from "../flows/messageFlow";
 import { handleLibraryChat } from "../flows/libraryFlow";
@@ -243,6 +248,10 @@ export function useChatbot({
   // and reset right after that request completes. It is used only to gate
   // TTS playback inside the leave-approval success handler.
   const isVoiceTriggeredRequestRef = useRef<boolean>(false);
+  /** Sarvam TTS BCP-47 for the current utterance (en-IN | hi-IN). */
+  const utteranceTtsLanguageRef = useRef<string>("en-IN");
+  /** Language hint sent with the in-flight query-handler call. */
+  const pendingQueryLanguageRef = useRef<string | undefined>(undefined);
   // Flag to remember that the current Course Progress flow was initiated
   // via the microphone. This persists across the selection click so we can
   // play the second-step TTS when the user clicks a class-section.
@@ -328,7 +337,7 @@ export function useChatbot({
 
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("default");
-  const [selectedLanguage, setSelectedLanguage] = useState<string>("en-IN");
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("auto");
   const [ttsLoading, setTtsLoading] = useState<number | null>(null);
   const [feedbackComment, setFeedbackComment] = useState<{
     [idx: number]: string;
@@ -507,6 +516,9 @@ export function useChatbot({
     }
 
     lastVoiceSubmitRef.current = { text: finalInput, at: now };
+    const detected = detectVoiceLanguage(finalInput, selectedLanguage);
+    utteranceTtsLanguageRef.current = voiceLangToTtsBcp47(detected);
+    pendingQueryLanguageRef.current = voiceLangToApiHint(detected);
     isVoiceTriggeredRequestRef.current = true;
     voiceSubmitActiveRef.current = true;
     try {
@@ -547,7 +559,12 @@ export function useChatbot({
   // const [classificationConfidence, setClassificationConfidence] =
   //   useState<number>(0);
 
-  const languages = [{ label: "English (India)", value: "en-IN" }];
+  const languages = [
+    { label: "Auto (English / Hindi / Hinglish)", value: "auto" },
+    { label: "English (India)", value: "en-IN" },
+    { label: "Hindi", value: "hi-IN" },
+    { label: "Hinglish", value: "hinglish" },
+  ];
 
   useEffect(() => {
     if (chatHistory.length === 0) {
@@ -2428,8 +2445,23 @@ export function useChatbot({
           flow: targetFlow,
           validation_status: classificationResult?.validation_status,
           voice_mode: isVoiceTriggeredForThisRequest,
+          language:
+            pendingQueryLanguageRef.current ||
+            (selectedLanguage !== "auto" ? selectedLanguage : undefined) ||
+            voiceLangToApiHint(detectVoiceLanguage(userMessage, selectedLanguage)),
         });
         if (data.status === "success" && data.data) {
+          if (data.data.tts_language) {
+            utteranceTtsLanguageRef.current = data.data.tts_language;
+          } else if (data.data.detected_language) {
+            utteranceTtsLanguageRef.current = voiceLangToTtsBcp47(
+              data.data.detected_language === "hi"
+                ? "hi"
+                : data.data.detected_language === "hinglish"
+                  ? "hinglish"
+                  : "en",
+            );
+          }
           setChatHistory((prev) => [
             ...prev,
             {
@@ -3039,11 +3071,14 @@ export function useChatbot({
         isQuery && uuidQuestion
           ? uuidQuestion
           : `tts_${Date.now()}_${thisRequestId}`;
+      const ttsLang =
+        utteranceTtsLanguageRef.current || selectedLanguage || "en-IN";
       const reader = await aiAPI.textToSpeech({
         text,
         uuid_question: uuidForTts,
         skip_insight: skipInsight || !isQuery,
-        voice: resolveTtsVoice(selectedLanguage),
+        voice: resolveTtsVoice(ttsLang),
+        language: ttsLang,
       });
 
       if (ttsRequestIdRef.current !== thisRequestId) {
@@ -3239,7 +3274,11 @@ export function useChatbot({
         );
       }, PIPELINE_TTS_FALLBACK_MS);
 
-      webrtc!.speakText(speechText, true);
+      webrtc!.speakText(
+        speechText,
+        true,
+        utteranceTtsLanguageRef.current || undefined,
+      );
       return;
     }
 

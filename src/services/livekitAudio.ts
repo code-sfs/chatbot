@@ -286,9 +286,13 @@ export class LiveKitAudioService {
     }
   }
 
-  speakText(text: string, interrupt = true): void {
+  speakText(text: string, interrupt = true, language?: string): void {
     if (!text.trim()) return;
-    this.sendClientMessage('speak-tts', { text: text.trim(), interrupt });
+    this.sendClientMessage('speak-tts', {
+      text: text.trim(),
+      interrupt,
+      ...(language ? { language } : {}),
+    });
   }
 
   interruptPipelineTTS(): void {

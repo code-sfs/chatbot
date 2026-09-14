@@ -42,6 +42,8 @@ interface QueryHandlerRequest {
   /** STT/PTT submission — backend awaits voice summary before returning tts_text. */
   voice_mode?: boolean;
   tts?: boolean;
+  /** Voice/UI language hint: en-IN | hi-IN | hinglish | auto */
+  language?: string;
 }
 
 interface QueryHandlerResponse {
@@ -64,6 +66,10 @@ interface QueryHandlerResponse {
     tts_text?: string;
     /** True when tts_text is an LLM/table summary (safe to speak without re-resolve). */
     tts_summary_ready?: boolean;
+    /** Sarvam TTS BCP-47 from detected utterance language. */
+    tts_language?: string;
+    /** en | hi | hinglish */
+    detected_language?: string;
     visualization?: Visualization;
     kpi_cards?: import("../components/types").KpiCard[];
     findings?: string[];
@@ -572,7 +578,8 @@ interface TextToSpeechRequest {
   is_query?: boolean;
   uuid_question?: string;
   skip_insight?: boolean;
-  voice?: string;
+  voice?: string; // Sarvam speaker id (e.g. priya)
+  language?: string; // UI BCP-47 language (e.g. en-IN)
 }
 
 interface ResolveTtsTextRequest {

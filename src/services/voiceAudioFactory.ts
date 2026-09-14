@@ -16,7 +16,7 @@ export interface VoiceAudioService {
     options?: VoiceConnectOptions,
   ): Promise<void>;
   resumeBotAudio(): void;
-  speakText(text: string, interrupt?: boolean): void;
+  speakText(text: string, interrupt?: boolean, language?: string): void;
   interruptPipelineTTS(): void;
   interruptBotAudio(): void;
   disconnect(): Promise<void>;
