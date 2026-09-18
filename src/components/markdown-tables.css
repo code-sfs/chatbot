@@ -1146,6 +1146,104 @@
     width: 100%;
 }
 
+.manager-brief-compact {
+    margin: 0;
+    padding: 1.05rem 1.1rem 1.05rem;
+    background: #fff;
+    border: 1px solid rgba(61, 40, 23, 0.08);
+    border-radius: 18px;
+    box-shadow: 0 4px 18px rgba(61, 40, 23, 0.06);
+}
+
+.voice-response-card .manager-brief-compact {
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.mb-compact-body .bp-narrative {
+    margin-bottom: 0.65rem;
+}
+
+.mb-compact-body .bp-bullet-list {
+    padding-left: 1.2rem;
+    font-size: 0.9375rem;
+    line-height: 1.55;
+    color: #3d2817;
+}
+
+.mb-compact-body .bp-bullet-list li {
+    margin-bottom: 0.7rem;
+}
+
+.mb-compact-body .bp-attachment-note {
+    margin-top: 0.85rem;
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    color: #3d2817;
+}
+
+.mb-compact-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+    margin-top: 1rem;
+}
+
+.mb-compact-btn {
+    flex: 1;
+    min-width: 0;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.9rem;
+    border-radius: 12px;
+    font-family: "Poppins", sans-serif;
+    font-size: 0.9rem;
+    font-weight: 500;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mb-compact-btn-icon {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.mb-compact-btn-download {
+    background: #eef4ff;
+    border: 1px solid #c7d7fe;
+    color: #2563eb;
+}
+
+.mb-compact-btn-view {
+    background: #f4f4f5;
+    border: 1px solid #e4e4e7;
+    color: #3f3f46;
+}
+
+.mb-compact-btn-view.is-active {
+    background: #ece7df;
+    border-color: #d6cfc4;
+}
+
+.mb-compact-details {
+    margin-top: 1rem;
+    padding-top: 0.85rem;
+    border-top: 1px solid rgba(61, 40, 23, 0.08);
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .mb-compact-btn {
+        min-height: 44px;
+    }
+}
+
 @media (max-width: 480px) {
     .bp-area-row {
         flex-wrap: wrap;

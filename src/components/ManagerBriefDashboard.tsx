@@ -272,6 +272,7 @@ function BriefActionButton({
   tableDetail,
   multiTables,
   onViewTable,
+  viewActive = false,
 }: {
   action: ManagerBriefAction;
   tableDetail: {
@@ -286,12 +287,13 @@ function BriefActionButton({
     columns: string[];
   }>;
   onViewTable: () => void;
+  viewActive?: boolean;
 }) {
   if (action.id === "download_xls") {
     return (
       <button
         type="button"
-        className="board-pack-btn board-pack-btn-download bp-action-btn"
+        className="mb-compact-btn mb-compact-btn-download"
         onClick={() => {
           if (multiTables?.length) {
             downloadMultiTableXls(multiTables, action.filename || "query-results.xls");
@@ -305,7 +307,7 @@ function BriefActionButton({
           );
         }}
       >
-        <FiDownload className="bp-action-icon" />
+        <FiDownload className="mb-compact-btn-icon" />
         {action.label}
       </button>
     );
@@ -315,10 +317,11 @@ function BriefActionButton({
     return (
       <button
         type="button"
-        className="board-pack-btn bp-action-btn"
+        className={`mb-compact-btn mb-compact-btn-view${viewActive ? " is-active" : ""}`}
+        aria-expanded={viewActive}
         onClick={onViewTable}
       >
-        <FiEye className="bp-action-icon" />
+        <FiEye className="mb-compact-btn-icon" />
         {action.label}
       </button>
     );
@@ -336,16 +339,14 @@ export default function ManagerBriefDashboard({
   data,
   actionOptions,
 }: ManagerBriefDashboardProps) {
-  const tableCollapsedDefault = data.detail?.collapsed_default ?? false;
-  const [showBreakdown, setShowBreakdown] = useState(false);
-  const [showTable, setShowTable] = useState(!tableCollapsedDefault);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-
   const showHeader = Boolean(
     data.header.eyebrow?.trim() ||
       data.header.title?.trim() ||
       data.header.meta?.trim(),
   );
+  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const kpiCards = (data.kpi_strip ?? []).map((k) => ({
     label: k.label,
@@ -382,14 +383,6 @@ export default function ManagerBriefDashboard({
       });
   }, [data.detail]);
 
-  const tableTotal =
-    multiTableBlocks.reduce((sum, block) => sum + block.rows.length, 0) ||
-    data.detail?.table_rows?.length ||
-    0;
-  const hasViewAction = (data.actions ?? []).some(
-    (action) => action.id === "view_table",
-  );
-
   const selected = useMemo(
     () => data.sections.find((c) => c.id === selectedId),
     [data.sections, selectedId],
@@ -423,63 +416,66 @@ export default function ManagerBriefDashboard({
       : null;
 
   const hasTableContent = Boolean(tableDetail || multiTableBlocks.length);
+  const compactActions = useMemo(() => {
+    const existing = data.actions ?? [];
+    if (existing.length) return existing;
+    const fallback: ManagerBriefAction[] = [];
+    if (hasTableContent) {
+      fallback.push({
+        id: "download_xls",
+        label: "Download .xls",
+        filename: "query-results.xls",
+      });
+    }
+    if (
+      hasTableContent ||
+      kpiCards.length ||
+      data.bar_chart ||
+      data.sections.length ||
+      data.decisions.length
+    ) {
+      fallback.push({ id: "view_table", label: "View" });
+    }
+    return fallback;
+  }, [
+    data.actions,
+    data.bar_chart,
+    data.decisions.length,
+    data.sections.length,
+    hasTableContent,
+    kpiCards.length,
+  ]);
+  const hasExpandableDetails = Boolean(
+    hasTableContent ||
+      kpiCards.length ||
+      data.bar_chart ||
+      data.sections.length ||
+      data.decisions.length,
+  );
+
+  const bullets = data.bullets?.map((b) => b.trim()).filter(Boolean) ?? [];
+  const narrative = (data.narrative || "").trim();
+  const intro = (data.intro || "").trim();
+  const narrativeBullets =
+    bullets.length || narrative ? bullets : narrativeToBullets(narrative);
 
   return (
-    <div className="board-pack-dashboard manager-brief-dashboard">
-      {showHeader ? (
-        <div className="bp-header">
-          {data.header.eyebrow ? (
-            <div className="bp-eyebrow">{data.header.eyebrow}</div>
-          ) : null}
-          {data.header.title ? (
-            <h3 className="bp-school">{data.header.title}</h3>
-          ) : null}
-          {data.header.meta ? (
-            <div className="bp-meta">{data.header.meta}</div>
-          ) : null}
-        </div>
-      ) : null}
-
-      <div className="bp-narrative-card">
-        {(() => {
-          const bullets =
-            data.bullets?.map((b) => b.trim()).filter(Boolean) ?? [];
-          const narrative = (data.narrative || "").trim();
-          const intro = (data.intro || "").trim();
-          const narrativeBullets =
-            bullets.length || narrative
-              ? bullets
-              : narrativeToBullets(narrative);
-
-          if (narrativeBullets.length && narrative) {
-            return (
-              <>
-                {intro ? <p className="bp-narrative">{intro}</p> : null}
-                <SummaryBullets bullets={narrativeBullets} />
-                <p className="bp-attachment-note">{narrative}</p>
-              </>
-            );
-          }
-          if (narrativeBullets.length) {
-            return (
-              <>
-                {intro ? <p className="bp-narrative">{intro}</p> : null}
-                <SummaryBullets bullets={narrativeBullets} />
-              </>
-            );
-          }
-          if (narrative) {
-            return (
-              <SummaryText text={narrative} highlights={data.highlights} />
-            );
-          }
-          return null;
-        })()}
+    <div className="manager-brief-dashboard manager-brief-compact">
+      <div className="mb-compact-body">
+        {intro ? <p className="bp-narrative">{intro}</p> : null}
+        {narrativeBullets.length ? (
+          <SummaryBullets bullets={narrativeBullets} />
+        ) : narrative ? (
+          <SummaryText text={narrative} highlights={data.highlights} />
+        ) : null}
+        {narrativeBullets.length && narrative ? (
+          <p className="bp-attachment-note">{narrative}</p>
+        ) : null}
       </div>
 
-      {data.actions?.length && hasTableContent ? (
-        <div className="bp-action-row">
-          {data.actions.map((action) => (
+      {compactActions.length ? (
+        <div className="mb-compact-actions">
+          {compactActions.map((action) => (
             <BriefActionButton
               key={action.id}
               action={action}
@@ -493,98 +489,97 @@ export default function ManagerBriefDashboard({
                     }))
                   : undefined
               }
-              onViewTable={() => setShowTable(true)}
+              onViewTable={() => setShowDetails((v) => !v)}
+              viewActive={showDetails}
             />
           ))}
         </div>
       ) : null}
 
-      {kpiCards.length ? <KpiCardRow cards={kpiCards} /> : null}
-
-      {data.bar_chart ? <L1UtilisationBarChart chart={data.bar_chart} /> : null}
-
-      <div className="bp-area-list">
-        {data.sections.map((cat) => {
-          const Icon = ICONS[cat.icon] ?? FiAlertTriangle;
-          return (
-            <div key={cat.id} className="bp-area-row">
-              <Icon className="bp-area-icon" />
-              <div className="bp-area-body">
-                <div className="bp-area-title">{cat.title}</div>
-                <div className="bp-area-summary">{cat.summary_line}</div>
-              </div>
-              <StatusBadge kind={cat.status} />
+      {showDetails && hasExpandableDetails ? (
+        <div className="mb-compact-details">
+          {showHeader ? (
+            <div className="bp-header">
+              {data.header.eyebrow ? (
+                <div className="bp-eyebrow">{data.header.eyebrow}</div>
+              ) : null}
+              {data.header.title ? (
+                <h3 className="bp-school">{data.header.title}</h3>
+              ) : null}
+              {data.header.meta ? (
+                <div className="bp-meta">{data.header.meta}</div>
+              ) : null}
             </div>
-          );
-        })}
-      </div>
+          ) : null}
 
-      {data.sections.length > 1 ? (
-        <button
-          type="button"
-          className="bp-breakdown-toggle"
-          onClick={() => setShowBreakdown((v) => !v)}
-        >
-          {showBreakdown ? (
-            <>
-              <FiChevronUp className="bp-toggle-icon" /> Hide full breakdown
-            </>
-          ) : (
-            <>
-              <FiChevronDown className="bp-toggle-icon" /> See full breakdown by
-              area
-            </>
-          )}
-        </button>
-      ) : null}
+          {kpiCards.length ? <KpiCardRow cards={kpiCards} /> : null}
 
-      {showBreakdown && data.sections.length > 1 ? (
-        <>
-          <div className="bp-category-grid">
-            {data.sections.map((cat) => {
-              const Icon = ICONS[cat.icon] ?? FiAlertTriangle;
-              const active = cat.id === selectedId;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  className={`bp-category-card ${active ? "bp-category-active" : ""}`}
-                  onClick={() => handleCategoryClick(cat.id)}
-                >
-                  <span
-                    className={`bp-category-dot ${statusClass(cat.status)}`}
-                  />
-                  <Icon className="bp-category-icon" />
-                  <span className="bp-category-name">{cat.title}</span>
-                </button>
-              );
-            })}
-          </div>
-          {selected ? <CategoryDetail category={selected} /> : null}
-        </>
-      ) : null}
+          {data.bar_chart ? <L1UtilisationBarChart chart={data.bar_chart} /> : null}
 
-      {hasTableContent ? (
-        <>
-          {tableCollapsedDefault && !hasViewAction ? (
+          {data.sections.length ? (
+            <div className="bp-area-list">
+              {data.sections.map((cat) => {
+                const Icon = ICONS[cat.icon] ?? FiAlertTriangle;
+                return (
+                  <div key={cat.id} className="bp-area-row">
+                    <Icon className="bp-area-icon" />
+                    <div className="bp-area-body">
+                      <div className="bp-area-title">{cat.title}</div>
+                      <div className="bp-area-summary">{cat.summary_line}</div>
+                    </div>
+                    <StatusBadge kind={cat.status} />
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
+
+          {data.sections.length > 1 ? (
             <button
               type="button"
-              className="bp-table-toggle"
-              onClick={() => setShowTable((v) => !v)}
+              className="bp-breakdown-toggle"
+              onClick={() => setShowBreakdown((v) => !v)}
             >
-              {showTable ? (
+              {showBreakdown ? (
                 <>
-                  <FiChevronUp className="bp-toggle-icon" /> Hide full table
+                  <FiChevronUp className="bp-toggle-icon" /> Hide full breakdown
                 </>
               ) : (
                 <>
-                  <FiChevronDown className="bp-toggle-icon" /> See all {tableTotal}{" "}
-                  {tableTotal === 1 ? "row" : "rows"}
+                  <FiChevronDown className="bp-toggle-icon" /> See full breakdown by
+                  area
                 </>
               )}
             </button>
           ) : null}
-          {showTable ? (
+
+          {showBreakdown && data.sections.length > 1 ? (
+            <>
+              <div className="bp-category-grid">
+                {data.sections.map((cat) => {
+                  const Icon = ICONS[cat.icon] ?? FiAlertTriangle;
+                  const active = cat.id === selectedId;
+                  return (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      className={`bp-category-card ${active ? "bp-category-active" : ""}`}
+                      onClick={() => handleCategoryClick(cat.id)}
+                    >
+                      <span
+                        className={`bp-category-dot ${statusClass(cat.status)}`}
+                      />
+                      <Icon className="bp-category-icon" />
+                      <span className="bp-category-name">{cat.title}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              {selected ? <CategoryDetail category={selected} /> : null}
+            </>
+          ) : null}
+
+          {hasTableContent ? (
             <div className="bp-table-detail">
               {multiTableBlocks.length ? (
                 multiTableBlocks.map((block) => (
@@ -608,31 +603,31 @@ export default function ManagerBriefDashboard({
               ) : null}
             </div>
           ) : null}
-        </>
-      ) : null}
 
-      {data.decisions.length ? (
-        <div className="bp-decisions-section">
-          <div className="bp-decisions-heading">
-            <FiClipboard className="bp-decisions-icon" />
-            Everything that needs a decision
-          </div>
-          <ul className="bp-decisions-list">
-            {data.decisions.map((item) => (
-              <li
-                key={item.id}
-                className={`bp-decision-item ${statusClass(item.priority)}`}
-              >
-                <span
-                  className={`bp-decision-dot ${statusClass(item.priority)}`}
-                />
-                <div className="bp-decision-body">
-                  <div className="bp-decision-note">{item.note}</div>
-                  <div className="bp-decision-category">{item.category}</div>
-                </div>
-              </li>
-            ))}
-          </ul>
+          {data.decisions.length ? (
+            <div className="bp-decisions-section">
+              <div className="bp-decisions-heading">
+                <FiClipboard className="bp-decisions-icon" />
+                Everything that needs a decision
+              </div>
+              <ul className="bp-decisions-list">
+                {data.decisions.map((item) => (
+                  <li
+                    key={item.id}
+                    className={`bp-decision-item ${statusClass(item.priority)}`}
+                  >
+                    <span
+                      className={`bp-decision-dot ${statusClass(item.priority)}`}
+                    />
+                    <div className="bp-decision-body">
+                      <div className="bp-decision-note">{item.note}</div>
+                      <div className="bp-decision-category">{item.category}</div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       ) : null}
 

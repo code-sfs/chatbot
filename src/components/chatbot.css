@@ -230,9 +230,11 @@
   flex-direction: column;
   gap: 1rem;
   padding-bottom: 1rem;
+  width: 100%;
 }
 .chatbot-msg-row {
   display: flex;
+  width: 100%;
   margin-bottom: 0;
   align-items: flex-end;
   animation: messageSlideIn 0.3s ease-out;
@@ -290,6 +292,23 @@
 }
 .chatbot-msg-bubble.bot:has(.hybrid-action-panel) {
   max-width: min(95vw, 900px);
+}
+.chatbot-msg-bubble--brief {
+  max-width: min(92vw, 640px);
+  width: 100%;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+.chatbot-msg-bubble.bot.chatbot-msg-bubble--brief:hover {
+  transform: none;
+  box-shadow: none;
+}
+.chatbot-msg-bubble--brief .bot-actions-bottom {
+  justify-content: flex-end;
+  margin-top: 0.55rem;
+  padding-right: 0.15rem;
 }
 
 @keyframes spin {
@@ -1026,6 +1045,17 @@
     min-width: 38px;
     min-height: 38px;
     font-size: 16px;
+  }
+}
+
+/* Mobile: let bot answers use the full chat width instead of 80vw. */
+@media (max-width: 768px) {
+  .chatbot-msg-bubble.bot,
+  .chatbot-msg-bubble.bot:has(.hybrid-action-panel),
+  .chatbot-msg-bubble--brief {
+    max-width: 100%;
+    width: 100%;
+    box-sizing: border-box;
   }
 }
 
