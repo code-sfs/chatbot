@@ -43,21 +43,23 @@ export default function HomeView({
       </motion.div>
 
       <div className="home-mascot-wrap">
-        <AiMascot size={108} floatDistance={6} />
+        <AiMascot size={108} floatDistance={4} />
       </div>
 
-      <p className="home-section-label">Try asking</p>
-      <div className="suggested-prompts-scroll">
-        {suggestedPrompts.map((prompt) => (
-          <button
-            key={prompt}
-            type="button"
-            className="suggested-prompt-chip"
-            onClick={() => onSelectPrompt(prompt)}
-          >
-            {prompt}
-          </button>
-        ))}
+      <div className="home-prompts-section">
+        <p className="home-section-label">Try asking</p>
+        <div className="suggested-prompts-scroll">
+          {suggestedPrompts.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              className="suggested-prompt-chip"
+              onClick={() => onSelectPrompt(prompt)}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="home-bottom-stack">
