@@ -345,7 +345,11 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                 {/* <span className="chatbot-msg-icon">
                   <FiCpu />
                 </span> */}
-                <div className="chatbot-msg-bubble bot relative">
+                <div
+                  className={`chatbot-msg-bubble bot relative${
+                    managerBrief ? " chatbot-msg-bubble--brief" : ""
+                  }`}
+                >
                   {/* Processing indicator for image processing */}
                   {(msg as any).isProcessing && (
                     <div className="flex items-center gap-2 mb-2 p-2 rounded-md bg-gray-200 border border-gray-300">
@@ -2284,7 +2288,7 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                   <span />
                   <span />
                 </div>
-                <span className="thinking-text">Schools OS AI is thinking...</span>
+                <span className="thinking-text">SchoolsOS AI is thinking...</span>
               </div>
             </div>
           </div>

@@ -90,12 +90,12 @@ function App() {
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
-          className="bg-white/55 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(245,130,31,0.16)] border border-white/65 px-8 py-6 md:px-10 md:py-8 flex flex-col items-center gap-4"
+          className="bg-white/55 backdrop-blur-2xl rounded-3xl shadow-[0_8px_32px_rgba(245,130,31,0.16)] border border-white/65 px-8 py-7 md:px-10 md:py-8 flex flex-col items-center gap-5"
         >
-          <img 
-            src="/sofisto-img.png" 
-            alt="Schools OS AI" 
-            className="w-16 h-16 md:w-20 md:h-20 object-contain"
+          <img
+            src="/sofisto-head.png"
+            alt="SchoolsOS AI"
+            className="w-[5.5rem] h-[5.5rem] md:w-28 md:h-28 rounded-full object-cover shadow-[0_6px_18px_rgba(245,130,31,0.28)]"
           />
           <p className="text-[rgba(61,40,23,0.78)] text-sm md:text-base font-medium">
             Preparing your chat experience...

@@ -14,7 +14,7 @@ interface HomeViewProps {
 }
 
 const actionIcon = (icon: "mic" | "chat") =>
-  icon === "mic" ? <FiMic size={22} /> : <FiMessageCircle size={22} />;
+  icon === "mic" ? <FiMic size={18} /> : <FiMessageCircle size={18} />;
 
 export default function HomeView({
   userName,
@@ -34,16 +34,16 @@ export default function HomeView({
         transition={{ duration: 0.35 }}
       >
         <h1 className="home-greeting">
-          {displayName ? `Hi ${displayName},` : "Hi, I'm Schools OS AI"}
+          {displayName ? `Hi ${displayName},` : "Hi, I'm SchoolsOS AI"}
         </h1>
         <p className="home-subtitle">
-          Ask any questions you have — your Schools OS AI buddy is always ready to
+          Ask any questions you have — your SchoolsOS AI buddy is always ready to
           help.
         </p>
       </motion.div>
 
       <div className="home-mascot-wrap">
-        <AiMascot size={190} />
+        <AiMascot size={108} floatDistance={6} />
       </div>
 
       <p className="home-section-label">Try asking</p>
@@ -60,7 +60,7 @@ export default function HomeView({
         ))}
       </div>
 
-      <div className="home-bottom-stack" style={{ marginBottom: "20px" }}>
+      <div className="home-bottom-stack">
         <div className="quick-action-grid">
           {QUICK_ACTIONS.map((action, index) => (
             <motion.button

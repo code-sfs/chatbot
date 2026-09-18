@@ -125,7 +125,7 @@ export default function VoiceView({
                 <span />
                 <span />
               </div>
-              <span className="thinking-text">Schools OS AI is thinking…</span>
+              <span className="thinking-text">SchoolsOS AI is thinking…</span>
             </div>
           </div>
         ) : hasConversation ? (
