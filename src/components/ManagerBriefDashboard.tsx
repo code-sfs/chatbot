@@ -49,6 +49,31 @@ const STATUS_ICONS: Record<StatusKind, IconType> = {
   no_data: FiXCircle,
 };
 
+function isAmountToken(part: string) {
+  return /^(Rs\s*[\d,.]+(?:\s*(?:Cr|CR|L|K))?|\d+(?:\.\d+)?%)$/i.test(part);
+}
+
+function EmphasisText({ text }: { text: string }) {
+  const parts = text.split(
+    /(Rs\s*[\d,.]+(?:\s*(?:Cr|CR|L|K))?|\d+(?:\.\d+)?%)/gi,
+  );
+  if (parts.length === 1) return <>{text}</>;
+
+  return (
+    <>
+      {parts.map((part, i) =>
+        isAmountToken(part) ? (
+          <strong key={i} className="mb-emphasis">
+            {part}
+          </strong>
+        ) : (
+          <span key={i}>{part}</span>
+        ),
+      )}
+    </>
+  );
+}
+
 function SummaryBullets({ bullets }: { bullets: string[] }) {
   const items = bullets.map((b) => b.trim()).filter(Boolean);
   if (!items.length) return null;
@@ -56,7 +81,9 @@ function SummaryBullets({ bullets }: { bullets: string[] }) {
   return (
     <ul className="bp-bullet-list">
       {items.map((bullet, i) => (
-        <li key={i}>{bullet}</li>
+        <li key={i}>
+          <EmphasisText text={bullet} />
+        </li>
       ))}
     </ul>
   );
@@ -469,7 +496,9 @@ export default function ManagerBriefDashboard({
           <SummaryText text={narrative} highlights={data.highlights} />
         ) : null}
         {narrativeBullets.length && narrative ? (
-          <p className="bp-attachment-note">{narrative}</p>
+          <p className="bp-attachment-note">
+            <EmphasisText text={narrative} />
+          </p>
         ) : null}
       </div>
 

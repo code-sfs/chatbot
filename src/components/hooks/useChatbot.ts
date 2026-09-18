@@ -554,7 +554,7 @@ export function useChatbot({
       const welcomeMessage = {
         type: "bot" as const,
         answer:
-          "Hello! I'm Schools OS AI, your school assistant.\nHow can I help you today?",
+          "Hello! I'm SchoolsOS AI, your school assistant.\nHow can I help you today?",
         activeTab: "answer" as const,
         feedback: undefined,
         references: undefined,

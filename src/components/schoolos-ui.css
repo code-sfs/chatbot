@@ -697,8 +697,10 @@
   background: #fff;
   border: 1px solid rgba(61, 40, 23, 0.08);
   border-radius: 18px;
-  box-shadow: 0 4px 18px rgba(61, 40, 23, 0.06);
-  padding: 1.05rem 1.1rem 1.05rem;
+  box-shadow:
+    0 1px 2px rgba(61, 40, 23, 0.04),
+    0 10px 28px rgba(61, 40, 23, 0.08);
+  padding: 1.15rem 1.15rem 1.1rem;
 }
 
 .voice-response-actions {
