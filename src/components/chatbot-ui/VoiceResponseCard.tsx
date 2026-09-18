@@ -60,14 +60,15 @@ export default function VoiceResponseCard({
   const managerBrief = resolveManagerBrief(msg);
 
   return (
-    <div className="voice-response-card">
-      {userQuestion ? (
-        <p className="voice-response-question" title={userQuestion}>
-          “{userQuestion}”
-        </p>
-      ) : null}
+    <div className="chatbot-msg-bubble bot relative chatbot-msg-bubble--brief voice-response-wrap">
+      <div className="voice-response-card">
+        {userQuestion ? (
+          <p className="voice-response-question" title={userQuestion}>
+            “{userQuestion}”
+          </p>
+        ) : null}
 
-      <div className="voice-response-body">
+        <div className="voice-response-body">
         {managerBrief ? (
           <ManagerBriefDashboard
             data={managerBrief}
@@ -126,6 +127,7 @@ export default function VoiceResponseCard({
             ) : null}
           </>
         )}
+      </div>
       </div>
 
       <div className="bot-actions-bottom voice-response-actions">

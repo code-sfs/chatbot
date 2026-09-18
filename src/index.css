@@ -32,13 +32,17 @@
 
 html,
 body {
+  width: 100%;
   height: 100%;
   overflow: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
-  min-width: 320px;
+  min-width: 0;
+  width: 100%;
   height: 100%;
   overflow: hidden;
   font-family: "Poppins", "Inter", system-ui, sans-serif;
@@ -51,6 +55,7 @@ body {
 }
 
 #root {
+  width: 100%;
   height: 100%;
   overflow: hidden;
 }

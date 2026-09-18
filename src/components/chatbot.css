@@ -39,16 +39,18 @@
 }
 
 .chatbot-root {
-  width: 100vw;
+  width: 100%;
   height: 100vh;
   /* Dynamic viewport units so the layout (and the input bar) tracks the visible
      area when mobile WebView browser chrome / soft keyboard show & hide. The vh
      declaration above remains as a fallback for engines without dvh support.
      No min-height: it would let the shell grow past the viewport and make the
-     whole page scroll instead of just the message list. */
+     whole page scroll instead of just the message list.
+     Use 100% rather than 100vw — 100vw overflows Android/iOS WebViews. */
   height: 100dvh;
   max-height: 100dvh;
-  min-width: 100vw;
+  min-width: 0;
+  max-width: 100%;
   background: linear-gradient(
     160deg,
     var(--ai-gradient-start, #fff8f2) 0%,
@@ -196,6 +198,8 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
   border: none;
   border-radius: 0;
   padding: 1.5rem 1rem;
@@ -235,6 +239,7 @@
 .chatbot-msg-row {
   display: flex;
   width: 100%;
+  min-width: 0;
   margin-bottom: 0;
   align-items: flex-end;
   animation: messageSlideIn 0.3s ease-out;
@@ -293,16 +298,21 @@
 .chatbot-msg-bubble.bot:has(.hybrid-action-panel) {
   max-width: min(95vw, 900px);
 }
-.chatbot-msg-bubble--brief {
+.chatbot-msg-bubble.bot.chatbot-msg-bubble--brief {
   max-width: min(92vw, 640px);
   width: 100%;
+  min-width: 0;
   padding: 0;
   background: transparent;
   border: none;
   box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 .chatbot-msg-bubble.bot.chatbot-msg-bubble--brief:hover {
   transform: none;
+  background: transparent;
+  border: none;
   box-shadow: none;
 }
 .chatbot-msg-bubble--brief .bot-actions-bottom {
@@ -1048,14 +1058,20 @@
   }
 }
 
-/* Mobile: let bot answers use the full chat width instead of 80vw. */
-@media (max-width: 768px) {
+/* Phones and in-app WebViews: fill the screen width so text and voice
+   answers share the same card layout. */
+@media (max-width: 768px), (hover: none) and (pointer: coarse) {
   .chatbot-msg-bubble.bot,
   .chatbot-msg-bubble.bot:has(.hybrid-action-panel),
-  .chatbot-msg-bubble--brief {
+  .chatbot-msg-bubble.bot.chatbot-msg-bubble--brief,
+  .voice-response-wrap {
     max-width: 100%;
     width: 100%;
     box-sizing: border-box;
+  }
+  .chatbot-msg-bubble.user,
+  .voice-question-bubble {
+    max-width: 85%;
   }
 }
 
@@ -1074,7 +1090,9 @@
     /* Match the 44px buttons so the input bar lines up cleanly. */
     min-height: 44px;
   }
-  .chatbot-btn:hover {
+  .chatbot-btn:hover,
+  .chatbot-msg-bubble.user:hover,
+  .chatbot-msg-bubble.bot:hover {
     transform: none;
   }
   .chatbot-btn:active {
@@ -1085,6 +1103,17 @@
   }
   .bot-text-btn:active {
     transform: scale(0.98);
+  }
+  .bot-action-btn {
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    min-height: 40px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bot-action-btn:hover {
+    transform: none;
   }
 }
 

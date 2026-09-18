@@ -1153,6 +1153,8 @@
     border: 1px solid rgba(61, 40, 23, 0.08);
     border-radius: 18px;
     box-shadow: 0 4px 18px rgba(61, 40, 23, 0.06);
+    min-width: 0;
+    box-sizing: border-box;
 }
 
 .voice-response-card .manager-brief-compact {
@@ -1252,5 +1254,20 @@
     .bp-status-badge {
         max-width: 100%;
         margin-left: 1.8rem;
+    }
+
+    .manager-brief-compact {
+        padding: 0.8rem 0.75rem 0.85rem;
+    }
+
+    .mb-compact-btn {
+        font-size: 0.85rem;
+        padding: 0.5rem 0.55rem;
+    }
+
+    .mb-compact-body .bp-bullet-list,
+    .mb-compact-body .bp-attachment-note {
+        font-size: 0.9rem;
+        overflow-wrap: anywhere;
     }
 }
