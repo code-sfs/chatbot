@@ -4,9 +4,14 @@ import { schoolOsMascotSvg } from "../schoolOsMascotSvg";
 interface AiMascotProps {
   size?: number;
   animate?: boolean;
+  floatDistance?: number;
 }
 
-export default function AiMascot({ size = 200, animate = true }: AiMascotProps) {
+export default function AiMascot({
+  size = 200,
+  animate = true,
+  floatDistance = 12,
+}: AiMascotProps) {
   const glowSize = size * 1.35;
 
   return (
@@ -42,7 +47,7 @@ export default function AiMascot({ size = 200, animate = true }: AiMascotProps) 
       <motion.div
         className="ai-mascot-body"
         style={{ width: size, height: size }}
-        animate={animate ? { y: [0, -12, 0] } : undefined}
+        animate={animate ? { y: [0, -floatDistance, 0] } : undefined}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       >
         <div
