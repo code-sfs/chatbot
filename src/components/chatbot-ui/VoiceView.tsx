@@ -110,7 +110,7 @@ export default function VoiceView({
   }, [conversation.length, isProcessing, active]);
 
   return (
-    <div className="chatbot-screen">
+    <div className="chatbot-screen chatbot-screen--voice">
       <ScreenHeader title="Voice Chat AI" onBack={onBack} />
 
       <div className="voice-view-body">
@@ -194,7 +194,7 @@ export default function VoiceView({
             aria-label="Continue in chat"
             title="Continue in chat"
           >
-            <FiMessageCircle size={22} />
+            <FiMessageCircle size={18} />
           </button>
         }
       />

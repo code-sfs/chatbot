@@ -17,7 +17,7 @@ export default function ScreenHeader({ title, onBack, rightSlot }: ScreenHeaderP
           aria-label="Go back"
           style={{ gridColumn: 1, justifySelf: "start" }}
         >
-          <FiChevronLeft size={22} />
+          <FiChevronLeft size={20} />
         </button>
       ) : (
         <span className="chatbot-glass-btn-placeholder" style={{ gridColumn: 1 }} />

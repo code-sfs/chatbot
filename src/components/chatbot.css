@@ -40,13 +40,19 @@
 
 .chatbot-root {
   width: 100%;
-  /* Fill the WebView itself. 100vh/100dvh is often shorter than the Android
-     WebView (native app chrome), which left a gap below Voice/Chat cards. */
-  position: absolute;
+  /* Pin to the visible WebView on Android and iOS (not 100vh). */
+  position: fixed;
   inset: 0;
   height: 100%;
-  min-height: 0;
-  max-height: none;
+  height: 100svh;
+  height: -webkit-fill-available;
+  height: var(--app-height, 100%);
+  min-height: 100%;
+  min-height: 100svh;
+  min-height: -webkit-fill-available;
+  min-height: var(--app-height, 100%);
+  max-height: 100%;
+  max-height: var(--app-height, 100%);
   min-width: 0;
   max-width: 100%;
   background: linear-gradient(

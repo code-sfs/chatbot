@@ -47,7 +47,7 @@ export default function ChatHeaderWithMenu({ onBack }: ChatHeaderWithMenuProps) 
           onClick={onBack}
           aria-label="Go back"
         >
-          <FiChevronLeft size={22} />
+          <FiChevronLeft size={20} />
         </button>
       ) : (
         <span className="chatbot-glass-btn-placeholder" />
