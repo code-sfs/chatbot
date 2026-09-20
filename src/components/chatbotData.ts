@@ -118,7 +118,9 @@ export const SUGGESTED_PROMPTS_BY_PERSONA: Record<PersonaGroup, string[]> = {
 
     "List teachers absent today",
 
-    "Show fee collection summary this month",
+    "Show the list of teachers with their workload.",
+
+    "Number of teachers subject wise",
 
     "Show top performing classes this term",
 
