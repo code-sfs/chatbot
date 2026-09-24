@@ -386,6 +386,106 @@
   display: block;
 }
 
+.home-mascot-wrap svg,
+.home-mascot-wrap .mascot-figure {
+  overflow: visible;
+  clip-path: none;
+}
+
+.home-mascot-wrap .mascot-eye {
+  transform-box: fill-box;
+  transform-origin: 50% 55%;
+  animation: mascotBlink 5.2s ease-in-out infinite;
+}
+
+.home-mascot-wrap .mascot-arm-wave {
+  transform-box: fill-box;
+  transform-origin: 88% 78%;
+  animation: mascotWave 3.4s ease-in-out infinite;
+}
+
+@keyframes mascotBlink {
+  0%,
+  41%,
+  47%,
+  100% {
+    transform: scaleY(1);
+  }
+  44% {
+    transform: scaleY(0.08);
+  }
+}
+
+@keyframes mascotWave {
+  0%,
+  58%,
+  100% {
+    transform: rotate(0deg);
+  }
+  10% {
+    transform: rotate(16deg);
+  }
+  20% {
+    transform: rotate(-12deg);
+  }
+  30% {
+    transform: rotate(14deg);
+  }
+  42% {
+    transform: rotate(0deg);
+  }
+}
+
+.home-mascot-wrap--depart {
+  overflow: visible;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.suggested-prompt-chip:disabled {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.home-mascot-wrap--depart .mascot-eye,
+.home-mascot-wrap--depart .mascot-arm-wave {
+  animation: none;
+}
+
+.home-mascot-wrap--depart .ai-mascot {
+  animation: mascotHopThenRun 1.05s ease-in forwards;
+}
+
+.home-mascot-wrap--depart .mascot-foot {
+  transform-box: fill-box;
+  transform-origin: 50% 8%;
+}
+
+.home-mascot-wrap--depart .mascot-foot-left {
+  animation: thinkingFootLeft 0.26s ease-in-out infinite;
+  animation-delay: 0.28s;
+}
+
+.home-mascot-wrap--depart .mascot-foot-right {
+  animation: thinkingFootRight 0.26s ease-in-out infinite;
+  animation-delay: 0.28s;
+}
+
+@keyframes mascotHopThenRun {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  16% {
+    transform: translate(0, -22px) scale(1.06);
+  }
+  28% {
+    transform: translate(6px, 0) scale(1);
+  }
+  100% {
+    transform: translate(42vw, 4px) scale(0.72);
+  }
+}
+
 /* Bottom control bar */
 .bottom-control-footer {
   flex-shrink: 0;
@@ -843,6 +943,11 @@
 .typing-dots span:nth-child(3) { animation-delay: 0.36s; }
 
 @media (prefers-reduced-motion: reduce) {
+  .home-mascot-wrap .mascot-eye,
+  .home-mascot-wrap .mascot-arm-wave,
+  .home-mascot-wrap--depart .ai-mascot,
+  .home-mascot-wrap--depart .mascot-foot-left,
+  .home-mascot-wrap--depart .mascot-foot-right,
   .thinking-mascot-runner,
   .thinking-mascot-run .ai-mascot,
   .thinking-mascot-run .mascot-foot-left,

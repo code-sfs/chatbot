@@ -19,7 +19,9 @@ export interface LoginResponse {
 
 interface UserFetchRequest {
   login_id: string;
-  user_type?: "student" | "teacher";
+  user_type?: "student" | "teacher" | "guest";
+  email?: string;
+  phone?: string;
 }
 
 interface UserFetchResponse {
