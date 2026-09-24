@@ -20,6 +20,8 @@ export interface LoginResponse {
 interface UserFetchRequest {
   login_id: string;
   user_type?: "student" | "teacher";
+  /** Guest first name passed by the app when the chatbot opens. */
+  guest_first_name?: string;
 }
 
 interface UserFetchResponse {

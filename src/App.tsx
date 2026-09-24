@@ -5,12 +5,14 @@ import AudioStreamerChatBot from "./components/AudioStreamerChatBot";
 import UserInfoBox from "./components/UserInfoBox";
 import { userAPI } from "./services/api";
 import { syncAuthFromURL} from "./utils/authStorage";
+import { formatDisplayName } from "./components/chatbot-ui/formatDisplayName";
 
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [roles, setRoles] = useState<string>("");
   const [loginId, setLoginId] = useState<string>("");
   const [firstName, setFirstName] = useState<string>("");
+  const [guestFirstName, setGuestFirstName] = useState<string>("");
   const [isAuthResolved, setIsAuthResolved] = useState(false);
   const [isAutoFetching, setIsAutoFetching] = useState(false);
   const [autoAuthError, setAutoAuthError] = useState<string | null>(null);
@@ -28,6 +30,14 @@ function App() {
       const tokenFromQuery = params.get("token");
       const loginIdFromQuery = params.get("login_id");
       const firstNameFromQuery = params.get("first_name");
+      const guestFirstNameFromQuery = formatDisplayName(
+        params.get("guest_first_name"),
+      );
+      const storedGuestFirstName = sessionStorage.getItem(
+        `chatbot_guest_first_name:${loginIdFromQuery || ""}`,
+      );
+      const lockedGuestFirstName =
+        guestFirstNameFromQuery || storedGuestFirstName || "";
       const storedFirstName = sessionStorage.getItem(
         `chatbot_first_name:${loginIdFromQuery || ""}`,
       );
@@ -37,19 +47,33 @@ function App() {
         setAutoAuthError(null);
         localStorage.setItem("token", tokenFromQuery);
         setLoginId(loginIdFromQuery);
-        const initialFirstName = firstNameFromQuery || storedFirstName || "";
-        if (initialFirstName) {
-          setFirstName(initialFirstName);
+        if (lockedGuestFirstName) {
+          setGuestFirstName(lockedGuestFirstName);
+          setFirstName(lockedGuestFirstName);
+          sessionStorage.setItem(
+            `chatbot_guest_first_name:${loginIdFromQuery}`,
+            lockedGuestFirstName,
+          );
+        } else {
+          const initialFirstName = firstNameFromQuery || storedFirstName || "";
+          if (initialFirstName) {
+            setFirstName(initialFirstName);
+          }
         }
 
         try {
           const response = await userAPI.fetch({
             login_id: loginIdFromQuery,
+            ...(lockedGuestFirstName
+              ? { guest_first_name: lockedGuestFirstName }
+              : {}),
           });
           if (response.status === "success" && response.user_id) {
             setUserId(response.user_id);
             setRoles(response.user_roles || "");
-            if (response.first_name) {
+            if (lockedGuestFirstName) {
+              setFirstName(lockedGuestFirstName);
+            } else if (response.first_name) {
               setFirstName(response.first_name);
               sessionStorage.setItem(
                 `chatbot_first_name:${loginIdFromQuery}`,
@@ -121,6 +145,7 @@ function App() {
                 userId={userId}
                 loginId={loginId}
                 firstName={firstName}
+                guestFirstName={guestFirstName}
                 roles={roles}
                 autoAuthError={autoAuthError}
                 onUserFetched={(id, r, fetchedLoginId, fetchedFirstName) => {
@@ -145,6 +170,7 @@ const MainLayout = ({
   userId,
   loginId,
   firstName,
+  guestFirstName,
   roles,
   autoAuthError,
   onUserFetched,
@@ -152,6 +178,7 @@ const MainLayout = ({
   userId: string | null;
   loginId: string;
   firstName: string;
+  guestFirstName: string;
   roles: string;
   autoAuthError: string | null;
   onUserFetched: (
@@ -175,6 +202,7 @@ const MainLayout = ({
           roles={roles}
           loginId={loginId}
           firstName={firstName}
+          guestFirstName={guestFirstName}
         />
       )}
     </>

@@ -221,10 +221,12 @@ export function useChatbot({
   userId,
   roles,
   loginId,
+  guestFirstName,
 }: {
   userId: string;
   roles: string;
   loginId: string;
+  guestFirstName?: string;
 }): UseChatbotReturn {
   const webrtcServiceRef = useRef<VoiceAudioService | null>(null);
   const lastInterimTextRef = useRef<string>(""); // Track last interim text to replace it with final
@@ -343,7 +345,9 @@ export function useChatbot({
       localStorage.getItem("sessionId") ||
       `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   );
-  const [resolvedFirstName, setResolvedFirstName] = useState<string>("");
+  const [resolvedFirstName, setResolvedFirstName] = useState<string>(
+    guestFirstName || "",
+  );
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]); // <-- add for editable attendance
   const attendanceDataRef = useRef<AttendanceRecord[]>([]); // Ref to access current attendanceData in closures
   const [attendanceStep, setAttendanceStep] = useState<
@@ -596,11 +600,16 @@ export function useChatbot({
   useEffect(() => {
     const fetchUserSession = async () => {
       try {
-        const data = await userAPI.fetch({ login_id: loginId });
+        const data = await userAPI.fetch({
+          login_id: loginId,
+          ...(guestFirstName ? { guest_first_name: guestFirstName } : {}),
+        });
         if (data.status === "success" && data.session_id) {
           setSessionId(data.session_id);
         }
-        if (data.status === "success" && data.first_name) {
+        if (guestFirstName) {
+          setResolvedFirstName(guestFirstName);
+        } else if (data.status === "success" && data.first_name) {
           setResolvedFirstName(data.first_name);
         }
       } catch (err) {
@@ -609,7 +618,7 @@ export function useChatbot({
     };
 
     fetchUserSession();
-  }, [userId, loginId]);
+  }, [userId, loginId, guestFirstName]);
 
   useEffect(() => {
     activeFlowRef.current = activeFlow;
