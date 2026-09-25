@@ -114,17 +114,23 @@ export const SUGGESTED_PROMPTS_BY_PERSONA: Record<PersonaGroup, string[]> = {
 
   principal: [
 
-    "Show school-wide attendance today",
+    "show my profile summary",
 
-    "List teachers absent today",
+    "when was my joining date",
+    
+    "Number of teachers subject wise",
+
+    "show name of the hindi teachers",
+
+    "Maximum staff absentees and late comers",
+
+    "Teachers due for retirement next three years",
 
     "Show fee collection summary this month",
 
     "Show top performing classes this term",
 
-    "List pending leave approvals",
-
-    "Show new admissions this month",
+    "Can you share the list of teachers along with their work load",
 
   ],
 
