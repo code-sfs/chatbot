@@ -18,6 +18,7 @@ import { MarksEntryTable } from "./MarksEntryTable";
 import { HealthCardTable } from "./HealthCardTable";
 import { HealthCardSelector } from "./HealthCardSelector";
 import ChatWelcomePanel from "./chatbot-ui/ChatWelcomePanel";
+import ThinkingIndicator from "./chatbot-ui/ThinkingIndicator";
 import type { FlowType } from "./types";
 import { getThumbsUpClass, getThumbsDownClass } from "./utils/chatbotUtils";
 import { leaveApprovalAPI, studentLeaveApprovalAPI } from "../services/api";
@@ -2282,14 +2283,7 @@ export default function ChatMessageList(props: ChatMessageListProps) {
               <FiCpu />
             </span> */}
             <div className="chatbot-msg-bubble bot processing-bubble flex">
-              <div className="processing-indicator flex gap-2 items-center justify-center">
-                <div className="typing-dots" aria-label="Thinking">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <span className="thinking-text">SchoolsOS AI is thinking...</span>
-              </div>
+              <ThinkingIndicator />
             </div>
           </div>
         )}
