@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import UserInfoBox from "./components/UserInfoBox";
 import AudioStreamerChatBot from "./components/AudioStreamerChatBot";
 import { userAPI } from "./services/api";
 import { syncAuthFromURL} from "./utils/authStorage";
@@ -172,6 +173,7 @@ const MainLayout = ({
   guestFirstName,
   roles,
   autoAuthError,
+  onUserFetched,
 }: {
   userId: string | null;
   loginId: string;
@@ -189,21 +191,29 @@ const MainLayout = ({
   return (
     <>
       {!userId ? (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFF8F2] via-[#FFE4C8] to-[#FFC98A] px-4">
-          <div className="bg-white/60 backdrop-blur-2xl rounded-3xl shadow-lg px-8 py-7 text-center max-w-sm border border-white/65">
-            <img
-              src="/sofisto-head.png"
-              alt="SchoolsOS AI"
-              className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-            />
-            <p className="font-semibold text-[rgba(61,40,23,0.9)]">
-              Please open the chatbot from SchoolsOS ERP or the mobile app.
-            </p>
-            {autoAuthError && (
-              <p className="text-sm text-red-600 mt-2">{autoAuthError}</p>
-            )}
+        import.meta.env.DEV ? (
+          <UserInfoBox
+            initialLoginId={loginId}
+            initialError={autoAuthError ?? undefined}
+            onUserFetched={onUserFetched}
+          />
+        ) : (
+          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFF8F2] via-[#FFE4C8] to-[#FFC98A] px-4">
+            <div className="bg-white/60 backdrop-blur-2xl rounded-3xl shadow-lg px-8 py-7 text-center max-w-sm border border-white/65">
+              <img
+                src="/sofisto-head.png"
+                alt="SchoolsOS AI"
+                className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
+              />
+              <p className="font-semibold text-[rgba(61,40,23,0.9)]">
+                Please open the chatbot from SchoolsOS ERP or the mobile app.
+              </p>
+              {autoAuthError && (
+                <p className="text-sm text-red-600 mt-2">{autoAuthError}</p>
+              )}
+            </div>
           </div>
-        </div>
+        )
       ) : (
         <AudioStreamerChatBot
           userId={userId}
