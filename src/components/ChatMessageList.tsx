@@ -2141,6 +2141,9 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                               />
                             )}
                             <div className="bot-actions-bottom">
+                              <span className="bot-actions-label">
+                                Is this helpful?
+                              </span>
                               <button
                                 className="bot-action-btn"
                                 title="Listen"

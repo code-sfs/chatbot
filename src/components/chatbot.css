@@ -1253,6 +1253,12 @@
   position: relative;
   flex-wrap: wrap;
 }
+.bot-actions-label {
+  font-size: 0.8rem;
+  color: #8b7355;
+  margin-right: 0.15rem;
+  align-self: center;
+}
 .bot-action-btn {
   background: transparent;
   border: 1px solid rgba(212, 165, 116, 0.2);
