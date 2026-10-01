@@ -1,6 +1,6 @@
 /**
  * Chatbot shared utilities (exit detection, TTS summary, feedback CSS).
- * Pure functions only – no React or side effects.
+ * Pure functions only – no React test or side effects.
  */
 
 /**

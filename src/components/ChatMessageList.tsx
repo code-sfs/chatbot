@@ -19,7 +19,7 @@ import { HealthCardTable } from "./HealthCardTable";
 import { HealthCardSelector } from "./HealthCardSelector";
 import ChatWelcomePanel from "./chatbot-ui/ChatWelcomePanel";
 import ThinkingIndicator from "./chatbot-ui/ThinkingIndicator";
-import type { FlowType } from "./types";
+import type { FlowType, SuggestedQuestion } from "./types";
 import { getThumbsUpClass, getThumbsDownClass } from "./utils/chatbotUtils";
 import { leaveApprovalAPI, studentLeaveApprovalAPI } from "../services/api";
 import type { ClassInfo, AttendanceRecord } from "./flows/attendanceFlow";
@@ -2151,7 +2151,7 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                 <div className="chat-followup-label">
                                   Related questions
                                 </div>
-                                {msg.suggested_questions.map((item) => (
+                                {msg.suggested_questions.map((item: SuggestedQuestion) => (
                                   <button
                                     key={item.cache_entry_id}
                                     type="button"
