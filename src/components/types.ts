@@ -125,6 +125,8 @@ export interface ChatMessage {
   classSection?: ClassSectionOption;
   classSectionsOptions?: any[];
   visualization?: Visualization;
+  /** When a chart exists, the user turns it on from the View graph button. */
+  graph_open?: boolean;
   table_data?: TableData;
   kpi_cards?: KpiCard[];
   findings?: string[];

@@ -4171,13 +4171,18 @@ export function useChatbot({
     }
   };
 
-  // Scroll chat to bottom on new message
+  // Scroll chat to bottom when a new message is added.
+  // Graph open/close updates the same message and must not move the table.
   const chatBoxRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const correctionBoxRef = useRef<HTMLDivElement | null>(null);
+  const chatLengthRef = useRef(0);
 
   useEffect(() => {
-    if (chatBoxRef.current) {
+    const nextLength = chatHistory.length;
+    const addedMessage = nextLength > chatLengthRef.current;
+    chatLengthRef.current = nextLength;
+    if (addedMessage && chatBoxRef.current) {
       chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
     }
   }, [chatHistory]);

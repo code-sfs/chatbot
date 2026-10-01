@@ -4,7 +4,7 @@ import KpiCardRow from "../KpiCardRow";
 import FindingsList from "../FindingsList";
 import PaginatedDataTable from "../PaginatedDataTable";
 import HybridActionPanel from "../HybridActionPanel";
-import VisualizationRenderer from "../VisualizationRenderer";
+import { GraphViewToggle } from "../VisualizationRenderer";
 import ManagerBriefDashboard from "../ManagerBriefDashboard";
 import { resolveManagerBrief } from "../../utils/resolveManagerBrief";
 import { getThumbsUpClass, getThumbsDownClass } from "../utils/chatbotUtils";
@@ -120,10 +120,23 @@ export default function VoiceResponseCard({
                 showDownload={!msg.catalog_id?.trim()}
               />
             ) : null}
-            {msg.visualization?.show_chart &&
-            msg.visualization &&
-            !msg.hybrid_action_available ? (
-              <VisualizationRenderer visualization={msg.visualization} />
+            {msg.visualization && !msg.hybrid_action_available ? (
+              <GraphViewToggle
+                visualization={msg.visualization}
+                open={Boolean(msg.graph_open)}
+                onToggle={() =>
+                  setChatHistory?.((prev) => {
+                    const next = [...prev];
+                    const current = next[idx];
+                    if (!current) return prev;
+                    next[idx] = {
+                      ...current,
+                      graph_open: !current.graph_open,
+                    };
+                    return next;
+                  })
+                }
+              />
             ) : null}
           </>
         )}
