@@ -447,6 +447,25 @@
   pointer-events: none;
 }
 
+.chat-followup-suggestions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  width: 100%;
+}
+
+.chat-followup-label {
+  font-size: 0.75rem;
+  color: var(--ai-text-muted, rgba(61, 40, 23, 0.55));
+  font-family: "Poppins", sans-serif;
+}
+
+.chat-followup-suggestions .suggested-prompt-chip {
+  width: 100%;
+}
+
 .home-mascot-wrap--depart .mascot-eye,
 .home-mascot-wrap--depart .mascot-arm-wave {
   animation: none;

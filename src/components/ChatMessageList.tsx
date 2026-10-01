@@ -160,7 +160,13 @@ export interface ChatMessageListProps {
   userId: string;
   getErpContext: () => { academic_session: string; branch_token: string };
   onOpenPreview: (url: string, filename: string) => void;
-  handleSubmit: (overrideMessage?: string) => Promise<void>;
+  handleSubmit: (
+    overrideMessage?: string,
+    cachedSuggestion?: {
+      cacheEntryId: string;
+      flow?: "query" | "faq" | "hybrid";
+    },
+  ) => Promise<void>;
   userRoles: string[];
   speakHealthCardBotMessage: (text: string) => void;
   onSelectPrompt?: (prompt: string) => void;
@@ -2140,6 +2146,33 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                 speakBotMessage={speakHealthCardBotMessage}
                               />
                             )}
+                            {msg.suggested_questions?.length ? (
+                              <div className="chat-followup-suggestions">
+                                <div className="chat-followup-label">
+                                  Related questions
+                                </div>
+                                {msg.suggested_questions.map((item) => (
+                                  <button
+                                    key={item.cache_entry_id}
+                                    type="button"
+                                    className="suggested-prompt-chip"
+                                    disabled={isProcessing || !item.question}
+                                    onClick={() =>
+                                      handleSubmit(item.question, {
+                                        cacheEntryId: item.cache_entry_id,
+                                        flow:
+                                          item.intent === "faq" ||
+                                          item.intent === "hybrid"
+                                            ? item.intent
+                                            : "query",
+                                      })
+                                    }
+                                  >
+                                    {item.question}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
                             <div className="bot-actions-bottom">
                               <button
                                 className="bot-action-btn"

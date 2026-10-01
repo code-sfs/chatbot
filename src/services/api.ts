@@ -45,6 +45,8 @@ interface QueryHandlerRequest {
   /** STT/PTT submission — backend awaits voice summary before returning tts_text. */
   voice_mode?: boolean;
   tts?: boolean;
+  /** When set, the backend answers from this semantic-cache row. */
+  cache_entry_id?: string;
 }
 
 interface QueryHandlerResponse {
@@ -81,6 +83,7 @@ interface QueryHandlerResponse {
     action_type?: string;
     hybrid_catalog_id?: string;
     hybrid_row_count?: number;
+    suggested_questions?: import("../components/types").SuggestedQuestion[];
   };
   message?: string;
 }
