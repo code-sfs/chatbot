@@ -18,6 +18,7 @@ import { MarksEntryTable } from "./MarksEntryTable";
 import { HealthCardTable } from "./HealthCardTable";
 import { HealthCardSelector } from "./HealthCardSelector";
 import ChatWelcomePanel from "./chatbot-ui/ChatWelcomePanel";
+import ThinkingIndicator from "./chatbot-ui/ThinkingIndicator";
 import type { FlowType } from "./types";
 import { getThumbsUpClass, getThumbsDownClass } from "./utils/chatbotUtils";
 import { leaveApprovalAPI, studentLeaveApprovalAPI } from "../services/api";
@@ -159,7 +160,13 @@ export interface ChatMessageListProps {
   userId: string;
   getErpContext: () => { academic_session: string; branch_token: string };
   onOpenPreview: (url: string, filename: string) => void;
-  handleSubmit: (overrideMessage?: string) => Promise<void>;
+  handleSubmit: (
+    overrideMessage?: string,
+    cachedSuggestion?: {
+      cacheEntryId: string;
+      flow?: "query" | "faq" | "hybrid";
+    },
+  ) => Promise<void>;
   userRoles: string[];
   speakHealthCardBotMessage: (text: string) => void;
   onSelectPrompt?: (prompt: string) => void;
@@ -2139,6 +2146,33 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                 speakBotMessage={speakHealthCardBotMessage}
                               />
                             )}
+                            {msg.suggested_questions?.length ? (
+                              <div className="chat-followup-suggestions">
+                                <div className="chat-followup-label">
+                                  Related questions
+                                </div>
+                                {msg.suggested_questions.map((item) => (
+                                  <button
+                                    key={item.cache_entry_id}
+                                    type="button"
+                                    className="suggested-prompt-chip"
+                                    disabled={isProcessing || !item.question}
+                                    onClick={() =>
+                                      handleSubmit(item.question, {
+                                        cacheEntryId: item.cache_entry_id,
+                                        flow:
+                                          item.intent === "faq" ||
+                                          item.intent === "hybrid"
+                                            ? item.intent
+                                            : "query",
+                                      })
+                                    }
+                                  >
+                                    {item.question}
+                                  </button>
+                                ))}
+                              </div>
+                            ) : null}
                             <div className="bot-actions-bottom">
                               <button
                                 className="bot-action-btn"
@@ -2282,14 +2316,7 @@ export default function ChatMessageList(props: ChatMessageListProps) {
               <FiCpu />
             </span> */}
             <div className="chatbot-msg-bubble bot processing-bubble flex">
-              <div className="processing-indicator flex gap-2 items-center justify-center">
-                <div className="typing-dots" aria-label="Thinking">
-                  <span />
-                  <span />
-                  <span />
-                </div>
-                <span className="thinking-text">SchoolsOS AI is thinking...</span>
-              </div>
+              <ThinkingIndicator />
             </div>
           </div>
         )}

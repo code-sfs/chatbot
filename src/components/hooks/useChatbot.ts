@@ -202,7 +202,13 @@ export interface UseChatbotReturn {
   isPttConnecting: boolean;
   setFullVoiceMode: (v: boolean) => void;
   isVoiceActive: boolean;
-  handleSubmit: (overrideMessage?: string) => Promise<void>;
+  handleSubmit: (
+    overrideMessage?: string,
+    cachedSuggestion?: {
+      cacheEntryId: string;
+      flow?: "query" | "faq" | "hybrid";
+    },
+  ) => Promise<void>;
   startStreaming: (useFullVoice?: boolean) => Promise<void>;
   stopStreaming: (skipSubmit?: boolean, keepWarmConnection?: boolean) => Promise<void>;
   handlePttDown: () => Promise<void>;
@@ -221,10 +227,12 @@ export function useChatbot({
   userId,
   roles,
   loginId,
+  guestFirstName,
 }: {
   userId: string;
   roles: string;
   loginId: string;
+  guestFirstName?: string;
 }): UseChatbotReturn {
   const webrtcServiceRef = useRef<VoiceAudioService | null>(null);
   const lastInterimTextRef = useRef<string>(""); // Track last interim text to replace it with final
@@ -343,7 +351,9 @@ export function useChatbot({
       localStorage.getItem("sessionId") ||
       `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
   );
-  const [resolvedFirstName, setResolvedFirstName] = useState<string>("");
+  const [resolvedFirstName, setResolvedFirstName] = useState<string>(
+    guestFirstName || "",
+  );
   const [attendanceData, setAttendanceData] = useState<AttendanceRecord[]>([]); // <-- add for editable attendance
   const attendanceDataRef = useRef<AttendanceRecord[]>([]); // Ref to access current attendanceData in closures
   const [attendanceStep, setAttendanceStep] = useState<
@@ -596,11 +606,16 @@ export function useChatbot({
   useEffect(() => {
     const fetchUserSession = async () => {
       try {
-        const data = await userAPI.fetch({ login_id: loginId });
+        const data = await userAPI.fetch({
+          login_id: loginId,
+          ...(guestFirstName ? { guest_first_name: guestFirstName } : {}),
+        });
         if (data.status === "success" && data.session_id) {
           setSessionId(data.session_id);
         }
-        if (data.status === "success" && data.first_name) {
+        if (guestFirstName) {
+          setResolvedFirstName(guestFirstName);
+        } else if (data.status === "success" && data.first_name) {
           setResolvedFirstName(data.first_name);
         }
       } catch (err) {
@@ -609,7 +624,7 @@ export function useChatbot({
     };
 
     fetchUserSession();
-  }, [userId, loginId]);
+  }, [userId, loginId, guestFirstName]);
 
   useEffect(() => {
     activeFlowRef.current = activeFlow;
@@ -1439,7 +1454,13 @@ export function useChatbot({
     attendanceVoiceInitiatedRef.current ||
     leaveVoiceInitiatedRef.current;
 
-  const handleSubmit = async (overrideMessage?: string) => {
+  const handleSubmit = async (
+    overrideMessage?: string,
+    cachedSuggestion?: {
+      cacheEntryId: string;
+      flow?: "query" | "faq" | "hybrid";
+    },
+  ) => {
     const userMessage = (overrideMessage ?? inputText).trim(); // captures user question here
     if (!userMessage) return;
 
@@ -1696,7 +1717,30 @@ export function useChatbot({
       message: userMessage,
     });
 
-    if (flowToExitOnCommand) {
+    const forcedCacheFlow: FlowType =
+      cachedSuggestion?.flow === "faq" || cachedSuggestion?.flow === "hybrid"
+        ? cachedSuggestion.flow
+        : "query";
+
+    if (cachedSuggestion?.cacheEntryId) {
+      targetFlow = forcedCacheFlow;
+      setDetectedFlow(forcedCacheFlow);
+      classificationResult = {
+        flow: forcedCacheFlow,
+        confidence: 1,
+        entities: {},
+        validation_status:
+          forcedCacheFlow === "faq"
+            ? "llm_intent_faq"
+            : forcedCacheFlow === "hybrid"
+              ? "hybrid_catalog_match"
+              : undefined,
+      };
+      console.log("[Routing] Cached suggestion — answering from cache", {
+        cacheEntryId: cachedSuggestion.cacheEntryId,
+        flow: forcedCacheFlow,
+      });
+    } else if (flowToExitOnCommand) {
       // Exit command: route to current flow's backend (leave-chat, course-progress-chat, etc.)
       // so we get the correct exit message and flow state is cleared by the backend
       targetFlow = flowToExitOnCommand;
@@ -2428,6 +2472,7 @@ export function useChatbot({
           flow: targetFlow,
           validation_status: classificationResult?.validation_status,
           voice_mode: isVoiceTriggeredForThisRequest,
+          cache_entry_id: cachedSuggestion?.cacheEntryId,
         });
         if (data.status === "success" && data.data) {
           setChatHistory((prev) => [
@@ -2456,6 +2501,7 @@ export function useChatbot({
               action_type: data.data?.action_type,
               hybrid_catalog_id: data.data?.hybrid_catalog_id,
               hybrid_row_count: data.data?.hybrid_row_count,
+              suggested_questions: data.data?.suggested_questions,
             
             },
           ]);

@@ -18,13 +18,15 @@ const AudioStreamerChatBot = ({
   roles,
   loginId,
   firstName,
+  guestFirstName,
 }: {
   userId: string;
   roles: string;
   loginId: string;
   firstName?: string;
+  guestFirstName?: string;
 }) => {
-  const api = useChatbot({ userId, roles, loginId });
+  const api = useChatbot({ userId, roles, loginId, guestFirstName });
   // const api = useChatbot({ userId, roles, email });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewFilename, setPreviewFilename] = useState<string>("Attachment");
@@ -66,7 +68,7 @@ const AudioStreamerChatBot = ({
               transition={{ duration: 0.22, ease: "easeOut" }}
             >
             <HomeView
-              userName={api.firstName || firstName || loginId}
+              userName={guestFirstName || api.firstName || firstName || loginId}
               roles={roles}
               onNavigate={(next) => setScreen(next)}
               onSelectPrompt={handleSelectPrompt}

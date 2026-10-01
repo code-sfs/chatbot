@@ -1,6 +1,7 @@
 import { Children, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { stripRecordCountLine } from "../utils/stripRecordCountLine";
 
 interface MemoizedAnswerProps {
   answer: string;
@@ -36,9 +37,14 @@ const MemoizedAnswer = memo(
       }
     };
 
+    const displayAnswer = stripRecordCountLine(answer);
+    if (!displayAnswer) {
+      return null;
+    }
+
     return (
       <div
-        key={`answer-${messageIdx}-${answer.slice(0, 20)}`}
+        key={`answer-${messageIdx}-${displayAnswer.slice(0, 20)}`}
         className="markdown-content"
       >
         <ReactMarkdown
@@ -109,7 +115,7 @@ const MemoizedAnswer = memo(
             },
           }}
         >
-          {answer || ""}
+          {displayAnswer}
         </ReactMarkdown>
       </div>
     );

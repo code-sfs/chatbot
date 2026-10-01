@@ -1,3 +1,4 @@
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { FiMic, FiMessageCircle } from "react-icons/fi";
 import AiMascot from "./AiMascot";
@@ -5,6 +6,8 @@ import { QUICK_ACTIONS } from "../chatbotData";
 import type { ChatbotScreen } from "../chatbotData";
 import { getSuggestedPrompts } from "../../utils/resolvePersona";
 import { formatDisplayName } from "./formatDisplayName";
+
+const HOP_THEN_RUN_MS = 1050;
 
 interface HomeViewProps {
   userName?: string | null;
@@ -24,9 +27,27 @@ export default function HomeView({
 }: HomeViewProps) {
   const displayName = formatDisplayName(userName);
   const suggestedPrompts = getSuggestedPrompts(roles);
+  const [departing, setDeparting] = useState(false);
+  const leavingRef = useRef(false);
+
+  const handlePromptClick = (prompt: string) => {
+    if (leavingRef.current) return;
+    leavingRef.current = true;
+
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reduceMotion) {
+      onSelectPrompt(prompt);
+      return;
+    }
+
+    setDeparting(true);
+    window.setTimeout(() => onSelectPrompt(prompt), HOP_THEN_RUN_MS);
+  };
 
   return (
-    <div className="chatbot-screen home-view">
+    <div className={`chatbot-screen home-view${departing ? " home-view--depart" : ""}`}>
       <motion.div
         className="home-header"
         initial={{ opacity: 0, y: 10 }}
@@ -42,22 +63,27 @@ export default function HomeView({
         </p>
       </motion.div>
 
-      <div className="home-mascot-wrap">
-        <AiMascot size={108} floatDistance={6} />
+      <div
+        className={`home-mascot-wrap${departing ? " home-mascot-wrap--depart" : ""}`}
+      >
+        <AiMascot size={108} animate={!departing} floatDistance={4} />
       </div>
 
-      <p className="home-section-label">Try asking</p>
-      <div className="suggested-prompts-scroll">
-        {suggestedPrompts.map((prompt) => (
-          <button
-            key={prompt}
-            type="button"
-            className="suggested-prompt-chip"
-            onClick={() => onSelectPrompt(prompt)}
-          >
-            {prompt}
-          </button>
-        ))}
+      <div className="home-prompts-section">
+        <p className="home-section-label">Try asking</p>
+        <div className="suggested-prompts-scroll">
+          {suggestedPrompts.map((prompt) => (
+            <button
+              key={prompt}
+              type="button"
+              className="suggested-prompt-chip"
+              onClick={() => handlePromptClick(prompt)}
+              disabled={departing}
+            >
+              {prompt}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div className="home-bottom-stack">
