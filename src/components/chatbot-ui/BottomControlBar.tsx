@@ -35,50 +35,52 @@ export default function BottomControlBar({
 
   return (
     <div className="bottom-control-footer">
-      {showHint ? (
-        <p className="bottom-control-hint" aria-live="polite">
-          {hintText}
-        </p>
-      ) : null}
       <div className="bottom-control-bar">
-        {leftSlot ?? <span className="bottom-control-side-placeholder" />}
+        {leftSlot}
 
-        <motion.button
-          ref={micRef}
-          type="button"
-          className={`bottom-control-mic-btn ${
-            isCapturing ? "bottom-control-mic-btn--active" : ""
-          }`}
-          onPointerDown={onPointerDown}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerCancel}
-          onLostPointerCapture={onLostPointerCapture}
-          onContextMenu={(e) => e.preventDefault()}
-          aria-pressed={isCapturing}
-          title={
-            connectingOnly
-              ? "Connecting microphone…"
-              : isCapturing
-                ? "Release to send"
-                : "Hold to talk"
-          }
-          whileTap={{ scale: 0.94 }}
-        >
-          {isCapturing && (
-            <motion.span
-              className="bottom-control-mic-ring"
-              animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0, 0.6] }}
-              transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut" }}
-            />
-          )}
-          {connectingOnly ? (
-            <FiLoader size={26} className="animate-spin" />
-          ) : (
-            <FiMic size={28} />
-          )}
-        </motion.button>
+        <div className="bottom-control-mic-wrap">
+          {showHint ? (
+            <p className="bottom-control-hint" aria-live="polite">
+              {hintText}
+            </p>
+          ) : null}
+          <motion.button
+            ref={micRef}
+            type="button"
+            className={`bottom-control-mic-btn ${
+              isCapturing ? "bottom-control-mic-btn--active" : ""
+            }`}
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerCancel}
+            onLostPointerCapture={onLostPointerCapture}
+            onContextMenu={(e) => e.preventDefault()}
+            aria-pressed={isCapturing}
+            title={
+              connectingOnly
+                ? "Connecting microphone…"
+                : isCapturing
+                  ? "Release to send"
+                  : "Hold to talk"
+            }
+            whileTap={{ scale: 0.94 }}
+          >
+            {isCapturing && (
+              <motion.span
+                className="bottom-control-mic-ring"
+                animate={{ scale: [1, 1.25, 1], opacity: [0.6, 0, 0.6] }}
+                transition={{ duration: 1.4, repeat: Infinity, ease: "easeOut" }}
+              />
+            )}
+            {connectingOnly ? (
+              <FiLoader size={22} className="animate-spin" />
+            ) : (
+              <FiMic size={24} />
+            )}
+          </motion.button>
+        </div>
 
-        {rightSlot ?? <span className="bottom-control-side-placeholder" />}
+        {rightSlot}
       </div>
     </div>
   );

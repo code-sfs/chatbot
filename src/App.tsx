@@ -1,15 +1,18 @@
 import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import UserInfoBox from "./components/UserInfoBox";
 import AudioStreamerChatBot from "./components/AudioStreamerChatBot";
 import { userAPI } from "./services/api";
 import { syncAuthFromURL} from "./utils/authStorage";
+import { formatDisplayName } from "./components/chatbot-ui/formatDisplayName";
 
 function App() {
   const [userId, setUserId] = useState<string | null>(null);
   const [roles, setRoles] = useState<string>("");
   const [loginId, setLoginId] = useState<string>("");
   const [firstName, setFirstName] = useState<string>("");
+  const [guestFirstName, setGuestFirstName] = useState<string>("");
   const [isAuthResolved, setIsAuthResolved] = useState(false);
   const [isAutoFetching, setIsAutoFetching] = useState(false);
   const [autoAuthError, setAutoAuthError] = useState<string | null>(null);
@@ -27,6 +30,14 @@ function App() {
       const tokenFromQuery = params.get("token");
       const loginIdFromQuery = params.get("login_id");
       const firstNameFromQuery = params.get("first_name");
+      const guestFirstNameFromQuery = formatDisplayName(
+        params.get("guest_first_name"),
+      );
+      const storedGuestFirstName = sessionStorage.getItem(
+        `chatbot_guest_first_name:${loginIdFromQuery || ""}`,
+      );
+      const lockedGuestFirstName =
+        guestFirstNameFromQuery || storedGuestFirstName || "";
       const storedFirstName = sessionStorage.getItem(
         `chatbot_first_name:${loginIdFromQuery || ""}`,
       );
@@ -36,19 +47,33 @@ function App() {
         setAutoAuthError(null);
         localStorage.setItem("token", tokenFromQuery);
         setLoginId(loginIdFromQuery);
-        const initialFirstName = firstNameFromQuery || storedFirstName || "";
-        if (initialFirstName) {
-          setFirstName(initialFirstName);
+        if (lockedGuestFirstName) {
+          setGuestFirstName(lockedGuestFirstName);
+          setFirstName(lockedGuestFirstName);
+          sessionStorage.setItem(
+            `chatbot_guest_first_name:${loginIdFromQuery}`,
+            lockedGuestFirstName,
+          );
+        } else {
+          const initialFirstName = firstNameFromQuery || storedFirstName || "";
+          if (initialFirstName) {
+            setFirstName(initialFirstName);
+          }
         }
 
         try {
           const response = await userAPI.fetch({
             login_id: loginIdFromQuery,
+            ...(lockedGuestFirstName
+              ? { guest_first_name: lockedGuestFirstName }
+              : {}),
           });
           if (response.status === "success" && response.user_id) {
             setUserId(response.user_id);
             setRoles(response.user_roles || "");
-            if (response.first_name) {
+            if (lockedGuestFirstName) {
+              setFirstName(lockedGuestFirstName);
+            } else if (response.first_name) {
               setFirstName(response.first_name);
               sessionStorage.setItem(
                 `chatbot_first_name:${loginIdFromQuery}`,
@@ -120,6 +145,7 @@ function App() {
                 userId={userId}
                 loginId={loginId}
                 firstName={firstName}
+                guestFirstName={guestFirstName}
                 roles={roles}
                 autoAuthError={autoAuthError}
                 onUserFetched={(id, r, fetchedLoginId, fetchedFirstName) => {
@@ -144,12 +170,14 @@ const MainLayout = ({
   userId,
   loginId,
   firstName,
+  guestFirstName,
   roles,
   autoAuthError,
 }: {
   userId: string | null;
   loginId: string;
   firstName: string;
+  guestFirstName: string;
   roles: string;
   autoAuthError: string | null;
   onUserFetched: (
@@ -162,27 +190,36 @@ const MainLayout = ({
   return (
     <>
       {!userId ? (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFF8F2] via-[#FFE4C8] to-[#FFC98A] px-4">
-          <div className="bg-white/60 backdrop-blur-2xl rounded-3xl shadow-lg px-8 py-7 text-center max-w-sm border border-white/65">
-            <img
-              src="/sofisto-head.png"
-              alt="SchoolsOS AI"
-              className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
-            />
-            <p className="font-semibold text-[rgba(61,40,23,0.9)]">
-              Please open the chatbot from SchoolsOS ERP or the mobile app.
-            </p>
-            {autoAuthError && (
-              <p className="text-sm text-red-600 mt-2">{autoAuthError}</p>
-            )}
+        import.meta.env.DEV ? (
+          <UserInfoBox
+            initialLoginId={loginId}
+            initialError={autoAuthError ?? undefined}
+            onUserFetched={onUserFetched}
+          />
+        ) : (
+          <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFF8F2] via-[#FFE4C8] to-[#FFC98A] px-4">
+            <div className="bg-white/60 backdrop-blur-2xl rounded-3xl shadow-lg px-8 py-7 text-center max-w-sm border border-white/65">
+              <img
+                src="/sofisto-head.png"
+                alt="SchoolsOS AI"
+                className="w-24 h-24 rounded-full mx-auto mb-4 object-cover"
+              />
+              <p className="font-semibold text-[rgba(61,40,23,0.9)]">
+                Please open the chatbot from SchoolsOS ERP or the mobile app.
+              </p>
+              {autoAuthError && (
+                <p className="text-sm text-red-600 mt-2">{autoAuthError}</p>
+              )}
+            </div>
           </div>
-        </div>
+        )
       ) : (
         <AudioStreamerChatBot
           userId={userId}
           roles={roles}
           loginId={loginId}
           firstName={firstName}
+          guestFirstName={guestFirstName}
         />
       )}
     </>

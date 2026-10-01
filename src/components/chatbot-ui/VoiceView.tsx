@@ -2,6 +2,7 @@ import { useMemo, useRef, useEffect } from "react";
 import { FiMessageCircle } from "react-icons/fi";
 import ScreenHeader from "./ScreenHeader";
 import AiMascot from "./AiMascot";
+import ThinkingIndicator from "./ThinkingIndicator";
 import VoiceActivePanel from "./VoiceActivePanel";
 import BottomControlBar from "./BottomControlBar";
 import VoiceResponseCard from "./VoiceResponseCard";
@@ -110,7 +111,7 @@ export default function VoiceView({
   }, [conversation.length, isProcessing, active]);
 
   return (
-    <div className="chatbot-screen">
+    <div className="chatbot-screen chatbot-screen--voice">
       <ScreenHeader title="Voice Chat AI" onBack={onBack} />
 
       <div className="voice-view-body">
@@ -118,14 +119,8 @@ export default function VoiceView({
           <VoiceActivePanel transcript={transcript} isListening={isListening} />
         ) : isProcessing ? (
           <div className="voice-view-center">
-            <AiMascot size={150} />
             <div className="voice-processing">
-              <div className="typing-dots" aria-label="Thinking">
-                <span />
-                <span />
-                <span />
-              </div>
-              <span className="thinking-text">SchoolsOS AI is thinking…</span>
+              <ThinkingIndicator />
             </div>
           </div>
         ) : hasConversation ? (
@@ -194,7 +189,7 @@ export default function VoiceView({
             aria-label="Continue in chat"
             title="Continue in chat"
           >
-            <FiMessageCircle size={22} />
+            <FiMessageCircle size={18} />
           </button>
         }
       />

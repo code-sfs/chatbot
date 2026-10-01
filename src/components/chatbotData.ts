@@ -58,9 +58,17 @@ export const SUGGESTED_PROMPTS_BY_PERSONA: Record<PersonaGroup, string[]> = {
 
     "What is my attendance this month?",
 
+    "show my today timetable",
+
+    "which is my substitute period for today",
+
+    "Show pending assignments for my class",
+
     "What are the school holidays this month?",
 
-    "Show names of all class teachers",
+    "name of students of my class having birthday this month",
+
+    "Show all students in my class along with parent phone number",
 
     "When did I join this school?",
 
@@ -86,26 +94,45 @@ export const SUGGESTED_PROMPTS_BY_PERSONA: Record<PersonaGroup, string[]> = {
 
     "Outstanding fee pending across the school",
 
-    "projected cash flow for the next 90 days",
-
-    "Current strength compare to our sanctioned capacity",
-
+    "Show me our top vendor spend this year",
+    
     "Show fee collection summary this month",
+
+    "projected cash flow for the next 90 days",
+    
+    "What percentage of revenue goes to staff cost?",
+
+    "What's our enquiry-to-admission conversion rate?",
+
+    "Compare current strength to sanctioned capacity by class.",
+
+    "Can you share the list of teachers along with their work load",
+  
+    "Show monthly revenue lost to concessions, scholarships, and write-offs.",
+
   ],
 
   principal: [
 
-    "Show school-wide attendance today",
+    "show my profile summary",
 
-    "List teachers absent today",
+    "when was my joining date",
+    
+    "Number of teachers subject wise",
 
-    "Show fee collection summary this month",
+    "show name of the hindi teachers",
+
+    "Maximum staff absentees and late comers",
+
+    "Teachers due for retirement next three years",
+
+    "Show the list of teachers with their workload.",
+
+    "Number of teachers subject wise",
 
     "Show top performing classes this term",
 
-    "List pending leave approvals",
-
-    "Show new admissions this month",
+    "Can you share the list of teachers along with their work load",
 
   ],
 
