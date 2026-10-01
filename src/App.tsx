@@ -173,6 +173,7 @@ const MainLayout = ({
   guestFirstName,
   roles,
   autoAuthError,
+  onUserFetched,
 }: {
   userId: string | null;
   loginId: string;
