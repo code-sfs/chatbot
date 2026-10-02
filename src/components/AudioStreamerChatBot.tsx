@@ -108,6 +108,7 @@ const AudioStreamerChatBot = ({
               userId={api.userId}
               getErpContext={api.getErpContext}
               setChatHistory={api.setChatHistory}
+              handleSubmit={api.handleSubmit}
             />
             </motion.div>
           )}

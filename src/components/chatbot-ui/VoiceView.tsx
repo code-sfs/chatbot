@@ -43,6 +43,13 @@ interface VoiceViewProps {
   userId?: string;
   getErpContext?: () => { academic_session: string; branch_token: string };
   setChatHistory?: React.Dispatch<React.SetStateAction<any[]>>;
+  handleSubmit?: (
+    overrideMessage?: string,
+    cachedSuggestion?: {
+      cacheEntryId: string;
+      flow?: "query" | "faq" | "hybrid";
+    },
+  ) => Promise<void>;
 }
 
 export default function VoiceView({
@@ -68,6 +75,7 @@ export default function VoiceView({
   userId,
   getErpContext,
   setChatHistory,
+  handleSubmit,
 }: VoiceViewProps) {
   const ptt = usePttButtonHandlers({
     handlePttDown,
@@ -147,6 +155,8 @@ export default function VoiceView({
                   userId={userId}
                   getErpContext={getErpContext}
                   setChatHistory={setChatHistory}
+                  isProcessing={isProcessing}
+                  handleSubmit={handleSubmit}
                 />
               ),
             )}

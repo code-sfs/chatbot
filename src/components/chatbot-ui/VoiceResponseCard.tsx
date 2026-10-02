@@ -1,4 +1,5 @@
-import { FiThumbsDown, FiThumbsUp, FiVolume2 } from "react-icons/fi";
+import { FiChevronRight, FiMessageCircle, FiThumbsDown, FiThumbsUp, FiVolume2 } from "react-icons/fi";
+import type { SuggestedQuestion } from "../types";
 import MemoizedAnswer from "../MemoizedAnswer";
 import KpiCardRow from "../KpiCardRow";
 import FindingsList from "../FindingsList";
@@ -37,6 +38,14 @@ export interface VoiceResponseCardProps {
   userId?: string;
   getErpContext?: () => { academic_session: string; branch_token: string };
   setChatHistory?: React.Dispatch<React.SetStateAction<any[]>>;
+  isProcessing?: boolean;
+  handleSubmit?: (
+    overrideMessage?: string,
+    cachedSuggestion?: {
+      cacheEntryId: string;
+      flow?: "query" | "faq" | "hybrid";
+    },
+  ) => Promise<void>;
 }
 
 export default function VoiceResponseCard({
@@ -55,6 +64,8 @@ export default function VoiceResponseCard({
   userId,
   getErpContext,
   setChatHistory,
+  isProcessing = false,
+  handleSubmit,
 }: VoiceResponseCardProps) {
   const answerText = msg.answer || msg.text || "";
   const managerBrief = resolveManagerBrief(msg);
@@ -142,6 +153,44 @@ export default function VoiceResponseCard({
         )}
       </div>
       </div>
+
+      {msg.suggested_questions?.length && handleSubmit ? (
+        <div className="chat-followup-suggestions">
+          <div className="chat-followup-label">Ask next</div>
+          {msg.suggested_questions.map(
+            (item: SuggestedQuestion, suggestionIdx: number) => (
+              <button
+                key={item.cache_entry_id}
+                type="button"
+                className="chat-followup-row"
+                style={{ animationDelay: `${suggestionIdx * 60}ms` }}
+                disabled={isProcessing || !item.question}
+                onClick={() =>
+                  handleSubmit(item.question, {
+                    cacheEntryId: item.cache_entry_id,
+                    flow:
+                      item.intent === "faq" || item.intent === "hybrid"
+                        ? item.intent
+                        : "query",
+                  })
+                }
+              >
+                <FiMessageCircle
+                  className="chat-followup-icon"
+                  size={14}
+                  aria-hidden
+                />
+                <span className="chat-followup-text">{item.question}</span>
+                <FiChevronRight
+                  className="chat-followup-chevron"
+                  size={14}
+                  aria-hidden
+                />
+              </button>
+            ),
+          )}
+        </div>
+      ) : null}
 
       <div className="bot-actions-bottom voice-response-actions">
         <button
