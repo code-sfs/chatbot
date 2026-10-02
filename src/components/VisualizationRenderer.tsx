@@ -387,3 +387,44 @@ export default function VisualizationRenderer({
 
   return null;
 }
+
+export function chartIsAvailable(
+  visualization?: Visualization | null,
+): visualization is Visualization {
+  return Boolean(
+    visualization &&
+      visualization.show_chart &&
+      visualization.chart_type !== "none" &&
+      visualization.payload &&
+      visualization.payload.length > 0,
+  );
+}
+
+export function GraphViewToggle({
+  visualization,
+  open,
+  onToggle,
+}: {
+  visualization?: Visualization | null;
+  open: boolean;
+  onToggle: () => void;
+}) {
+  if (!chartIsAvailable(visualization)) return null;
+  return (
+    <>
+      <button
+        type="button"
+        className="graph-view-btn"
+        aria-pressed={open}
+        onClick={onToggle}
+      >
+        {open ? "Hide graph" : "View graph"}
+      </button>
+      {open ? (
+        <div className="graph-view-chart">
+          <VisualizationRenderer visualization={visualization} />
+        </div>
+      ) : null}
+    </>
+  );
+}

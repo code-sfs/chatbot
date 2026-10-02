@@ -202,7 +202,13 @@ export interface UseChatbotReturn {
   isPttConnecting: boolean;
   setFullVoiceMode: (v: boolean) => void;
   isVoiceActive: boolean;
-  handleSubmit: (overrideMessage?: string) => Promise<void>;
+  handleSubmit: (
+    overrideMessage?: string,
+    cachedSuggestion?: {
+      cacheEntryId: string;
+      flow?: "query" | "faq" | "hybrid";
+    },
+  ) => Promise<void>;
   startStreaming: (useFullVoice?: boolean) => Promise<void>;
   stopStreaming: (skipSubmit?: boolean, keepWarmConnection?: boolean) => Promise<void>;
   handlePttDown: () => Promise<void>;
@@ -1448,7 +1454,13 @@ export function useChatbot({
     attendanceVoiceInitiatedRef.current ||
     leaveVoiceInitiatedRef.current;
 
-  const handleSubmit = async (overrideMessage?: string) => {
+  const handleSubmit = async (
+    overrideMessage?: string,
+    cachedSuggestion?: {
+      cacheEntryId: string;
+      flow?: "query" | "faq" | "hybrid";
+    },
+  ) => {
     const userMessage = (overrideMessage ?? inputText).trim(); // captures user question here
     if (!userMessage) return;
 
@@ -1705,7 +1717,30 @@ export function useChatbot({
       message: userMessage,
     });
 
-    if (flowToExitOnCommand) {
+    const forcedCacheFlow: FlowType =
+      cachedSuggestion?.flow === "faq" || cachedSuggestion?.flow === "hybrid"
+        ? cachedSuggestion.flow
+        : "query";
+
+    if (cachedSuggestion?.cacheEntryId) {
+      targetFlow = forcedCacheFlow;
+      setDetectedFlow(forcedCacheFlow);
+      classificationResult = {
+        flow: forcedCacheFlow,
+        confidence: 1,
+        entities: {},
+        validation_status:
+          forcedCacheFlow === "faq"
+            ? "llm_intent_faq"
+            : forcedCacheFlow === "hybrid"
+              ? "hybrid_catalog_match"
+              : undefined,
+      };
+      console.log("[Routing] Cached suggestion — answering from cache", {
+        cacheEntryId: cachedSuggestion.cacheEntryId,
+        flow: forcedCacheFlow,
+      });
+    } else if (flowToExitOnCommand) {
       // Exit command: route to current flow's backend (leave-chat, course-progress-chat, etc.)
       // so we get the correct exit message and flow state is cleared by the backend
       targetFlow = flowToExitOnCommand;
@@ -2437,6 +2472,7 @@ export function useChatbot({
           flow: targetFlow,
           validation_status: classificationResult?.validation_status,
           voice_mode: isVoiceTriggeredForThisRequest,
+          cache_entry_id: cachedSuggestion?.cacheEntryId,
         });
         if (data.status === "success" && data.data) {
           setChatHistory((prev) => [
@@ -2465,6 +2501,7 @@ export function useChatbot({
               action_type: data.data?.action_type,
               hybrid_catalog_id: data.data?.hybrid_catalog_id,
               hybrid_row_count: data.data?.hybrid_row_count,
+              suggested_questions: data.data?.suggested_questions,
             
             },
           ]);
@@ -4134,13 +4171,18 @@ export function useChatbot({
     }
   };
 
-  // Scroll chat to bottom on new message
+  // Scroll chat to bottom when a new message is added.
+  // Graph open/close updates the same message and must not move the table.
   const chatBoxRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const correctionBoxRef = useRef<HTMLDivElement | null>(null);
+  const chatLengthRef = useRef(0);
 
   useEffect(() => {
-    if (chatBoxRef.current) {
+    const nextLength = chatHistory.length;
+    const addedMessage = nextLength > chatLengthRef.current;
+    chatLengthRef.current = nextLength;
+    if (addedMessage && chatBoxRef.current) {
       chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
     }
   }, [chatHistory]);

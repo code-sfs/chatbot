@@ -4,6 +4,13 @@ import {
   downloadTableCsv,
   formatColumnHeader,
 } from "./utils/exportTableCsv";
+import { statusTone } from "./utils/statusPill";
+
+function StatusCell({ text }: { text: string }) {
+  const tone = statusTone(text);
+  if (!tone) return text;
+  return <span className={`status-pill status-pill--${tone}`}>{text}</span>;
+}
 
 function cellText(value: unknown, blankAsEmpty = false): string {
   if (value === null || value === undefined || value === "") {
@@ -217,13 +224,13 @@ export default function PaginatedDataTable({
                           rowSpan={span}
                           className="merge-group-cell"
                         >
-                          {cellText(row[col], true)}
+                          <StatusCell text={cellText(row[col], true)} />
                         </td>
                       );
                     }
                     return (
                       <td key={col}>
-                        {cellText(row[col], mergeEnabled)}
+                        <StatusCell text={cellText(row[col], mergeEnabled)} />
                       </td>
                     );
                   })}

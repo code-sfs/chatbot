@@ -96,6 +96,13 @@ export interface ClassSectionOption {
   sectionName?: string;
 }
 
+/** A follow-up the user can tap; the text and id already exist in the semantic cache. */
+export interface SuggestedQuestion {
+  question: string;
+  cache_entry_id: string;
+  intent?: "query" | "faq" | "hybrid";
+}
+
 export interface ChatMessage {
   type: "user" | "bot";
   text?: string;
@@ -118,6 +125,8 @@ export interface ChatMessage {
   classSection?: ClassSectionOption;
   classSectionsOptions?: any[];
   visualization?: Visualization;
+  /** When a chart exists, the user turns it on from the View graph button. */
+  graph_open?: boolean;
   table_data?: TableData;
   kpi_cards?: KpiCard[];
   findings?: string[];
@@ -140,6 +149,7 @@ export interface ChatMessage {
   hybrid_catalog_id?: string;
   hybrid_row_count?: number;
   hybrid_sent?: boolean;
+  suggested_questions?: SuggestedQuestion[];
 }
 
 export interface ClassInfo {

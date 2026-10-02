@@ -2,7 +2,13 @@
  * Chat message list: attendance step indicator, message map (user/bot, attendance table, leave approval, etc.), processing indicator.
  * Extracted from AudioStreamerChatBot to reduce main file size.
  */
-import { FiThumbsDown, FiThumbsUp, FiVolume2 } from "react-icons/fi";
+import {
+  FiChevronRight,
+  FiMessageCircle,
+  FiThumbsDown,
+  FiThumbsUp,
+  FiVolume2,
+} from "react-icons/fi";
 import MemoizedAnswer from "./MemoizedAnswer";
 import PaginatedDataTable from "./PaginatedDataTable";
 import KpiCardRow from "./KpiCardRow";
@@ -11,7 +17,7 @@ import RecommendationsList from "./RecommendationsList";
 import BoardPackReview from "./BoardPackReview";
 import ManagerBriefDashboard from "./ManagerBriefDashboard";
 import { resolveManagerBrief } from "../utils/resolveManagerBrief";
-import VisualizationRenderer from "./VisualizationRenderer";
+import { GraphViewToggle } from "./VisualizationRenderer";
 import ActionEngine from "./ActionEngine";
 import HybridActionPanel from "./HybridActionPanel";
 import { MarksEntryTable } from "./MarksEntryTable";
@@ -19,7 +25,7 @@ import { HealthCardTable } from "./HealthCardTable";
 import { HealthCardSelector } from "./HealthCardSelector";
 import ChatWelcomePanel from "./chatbot-ui/ChatWelcomePanel";
 import ThinkingIndicator from "./chatbot-ui/ThinkingIndicator";
-import type { FlowType } from "./types";
+import type { FlowType, SuggestedQuestion } from "./types";
 import { getThumbsUpClass, getThumbsDownClass } from "./utils/chatbotUtils";
 import { leaveApprovalAPI, studentLeaveApprovalAPI } from "../services/api";
 import type { ClassInfo, AttendanceRecord } from "./flows/attendanceFlow";
@@ -160,7 +166,13 @@ export interface ChatMessageListProps {
   userId: string;
   getErpContext: () => { academic_session: string; branch_token: string };
   onOpenPreview: (url: string, filename: string) => void;
-  handleSubmit: (overrideMessage?: string) => Promise<void>;
+  handleSubmit: (
+    overrideMessage?: string,
+    cachedSuggestion?: {
+      cacheEntryId: string;
+      flow?: "query" | "faq" | "hybrid";
+    },
+  ) => Promise<void>;
   userRoles: string[];
   speakHealthCardBotMessage: (text: string) => void;
   onSelectPrompt?: (prompt: string) => void;
@@ -332,6 +344,12 @@ export default function ChatMessageList(props: ChatMessageListProps) {
 
         {chatHistory.map((msg, idx) => {
           const managerBrief = resolveManagerBrief(msg);
+          const showAnswerCard =
+            !managerBrief &&
+            !(msg as any).isProcessing &&
+            Boolean(
+              msg.answer || msg.table_data || msg.suggested_questions?.length,
+            );
           return (
           <div key={idx} className={`chatbot-msg-row ${msg.type}`}>
             {msg.type === "user" ? (
@@ -342,14 +360,14 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                 </span> */}
               </>
             ) : (
-              <>
+              <div className="chatbot-msg-stack">
                 {/* <span className="chatbot-msg-icon">
                   <FiCpu />
                 </span> */}
                 <div
                   className={`chatbot-msg-bubble bot relative${
                     managerBrief ? " chatbot-msg-bubble--brief" : ""
-                  }`}
+                  }${showAnswerCard ? " chatbot-msg-bubble--answer" : ""}`}
                 >
                   {/* Processing indicator for image processing */}
                   {(msg as any).isProcessing && (
@@ -2003,7 +2021,7 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                           />
                                         ) : null;
                                       case "Narrative":
-                                        return (
+                                        return msg.table_data?.rows?.length ? null : (
                                           <MemoizedAnswer
                                             key={bIdx}
                                             answer={msg.answer || ""}
@@ -2047,12 +2065,24 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                           setChatHistory,
                                         });
                                       case "TrendChart":
-                                        return msg.visualization?.show_chart &&
-                                          msg.visualization &&
+                                        return msg.visualization &&
                                           !msg.hybrid_action_available ? (
-                                          <VisualizationRenderer
+                                          <GraphViewToggle
                                             key={bIdx}
                                             visualization={msg.visualization}
+                                            open={Boolean(msg.graph_open)}
+                                            onToggle={() =>
+                                              setChatHistory((prev) => {
+                                                const next = [...prev];
+                                                const current = next[idx];
+                                                if (!current) return prev;
+                                                next[idx] = {
+                                                  ...current,
+                                                  graph_open: !current.graph_open,
+                                                };
+                                                return next;
+                                              })
+                                            }
                                           />
                                         ) : null;
                                       case "ActionEngine":
@@ -2073,11 +2103,13 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                 {msg.kpi_cards?.length ? (
                                   <KpiCardRow cards={msg.kpi_cards} />
                                 ) : null}
-                                <MemoizedAnswer
-                                  answer={msg.answer || ""}
-                                  messageIdx={idx}
-                                  onOpenPreview={onOpenPreview}
-                                />
+                                {msg.table_data?.rows?.length ? null : (
+                                  <MemoizedAnswer
+                                    answer={msg.answer || ""}
+                                    messageIdx={idx}
+                                    onOpenPreview={onOpenPreview}
+                                  />
+                                )}
                                 {msg.findings?.length ? (
                                   <FindingsList items={msg.findings} />
                                 ) : null}
@@ -2089,16 +2121,6 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                 })}
                               </>
                             )}
-                            {/* Legacy chart placement: only when NOT layout-driven
-                                (the L4 layout renders its own TrendChart block). */}
-                            {!msg.layout?.length &&
-                            msg.visualization?.show_chart &&
-                            msg.visualization &&
-                            !msg.hybrid_action_available ? (
-                              <VisualizationRenderer
-                                visualization={msg.visualization}
-                              />
-                            ) : null}
                             {msg.marks_table && (
                               <MarksEntryTable
                                 data={msg.marks_table}
@@ -2140,6 +2162,27 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                 speakBotMessage={speakHealthCardBotMessage}
                               />
                             )}
+                            <div className="answer-toolbar">
+                            {!msg.layout?.length &&
+                            msg.visualization &&
+                            !msg.hybrid_action_available ? (
+                              <GraphViewToggle
+                                visualization={msg.visualization}
+                                open={Boolean(msg.graph_open)}
+                                onToggle={() =>
+                                  setChatHistory((prev) => {
+                                    const next = [...prev];
+                                    const current = next[idx];
+                                    if (!current) return prev;
+                                    next[idx] = {
+                                      ...current,
+                                      graph_open: !current.graph_open,
+                                    };
+                                    return next;
+                                  })
+                                }
+                              />
+                            ) : null}
                             <div className="bot-actions-bottom">
                               <span className="bot-actions-label">
                                 Is this helpful?
@@ -2243,6 +2286,7 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                   )}
                               </div>
                             </div>
+                            </div>
                             {msg.feedbackMessage && (
                               <div className="feedback-status-msg">
                                 {msg.feedbackMessage}
@@ -2275,7 +2319,49 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                     </>
                   )}
                 </div>
-              </>
+                {msg.suggested_questions?.length ? (
+                  <div className="chat-followup-suggestions">
+                    <div className="chat-followup-label">Ask next</div>
+                    {msg.suggested_questions.map(
+                      (item: SuggestedQuestion, suggestionIdx: number) => (
+                        <button
+                          key={item.cache_entry_id}
+                          type="button"
+                          className="chat-followup-row"
+                          style={{
+                            animationDelay: `${suggestionIdx * 60}ms`,
+                          }}
+                          disabled={isProcessing || !item.question}
+                          onClick={() =>
+                            handleSubmit(item.question, {
+                              cacheEntryId: item.cache_entry_id,
+                              flow:
+                                item.intent === "faq" ||
+                                item.intent === "hybrid"
+                                  ? item.intent
+                                  : "query",
+                            })
+                          }
+                        >
+                          <FiMessageCircle
+                            className="chat-followup-icon"
+                            size={14}
+                            aria-hidden
+                          />
+                          <span className="chat-followup-text">
+                            {item.question}
+                          </span>
+                          <FiChevronRight
+                            className="chat-followup-chevron"
+                            size={14}
+                            aria-hidden
+                          />
+                        </button>
+                      ),
+                    )}
+                  </div>
+                ) : null}
+              </div>
             )}
           </div>
           );

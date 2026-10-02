@@ -2,6 +2,7 @@ import { Children, memo } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { stripRecordCountLine } from "../utils/stripRecordCountLine";
+import { statusTone } from "./utils/statusPill";
 
 interface MemoizedAnswerProps {
   answer: string;
@@ -55,6 +56,27 @@ const MemoizedAnswer = memo(
                 <table {...props} />
               </div>
             ),
+            td: ({ node, children, ...props }) => {
+              const text = Children.toArray(children)
+                .map((child) =>
+                  typeof child === "string" || typeof child === "number"
+                    ? String(child)
+                    : "",
+                )
+                .join("")
+                .trim();
+              const tone = text ? statusTone(text) : null;
+              if (!tone) {
+                return <td {...props}>{children}</td>;
+              }
+              return (
+                <td {...props}>
+                  <span className={`status-pill status-pill--${tone}`}>
+                    {text}
+                  </span>
+                </td>
+              );
+            },
             ol: ({ node, ...props }) => (
               <ol
                 style={{
