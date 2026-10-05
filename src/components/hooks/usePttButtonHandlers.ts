@@ -14,6 +14,26 @@ export function usePttButtonHandlers({
   isCapturing,
 }: UsePttButtonHandlersOptions) {
   const btnRef = useRef<HTMLButtonElement>(null);
+  const clearingSelectionRef = useRef(false);
+
+  const clearSelection = useCallback(() => {
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) selection.removeAllRanges();
+  }, []);
+
+  const stopClearingSelection = useCallback(() => {
+    if (!clearingSelectionRef.current) return;
+    clearingSelectionRef.current = false;
+    document.removeEventListener("selectionchange", clearSelection);
+    clearSelection();
+  }, [clearSelection]);
+
+  const startClearingSelection = useCallback(() => {
+    clearSelection();
+    if (clearingSelectionRef.current) return;
+    clearingSelectionRef.current = true;
+    document.addEventListener("selectionchange", clearSelection);
+  }, [clearSelection]);
 
   const releaseCapture = useCallback((e: React.PointerEvent) => {
     const btn = btnRef.current;
@@ -25,7 +45,17 @@ export function usePttButtonHandlers({
   const onPointerDown = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>) => {
       e.preventDefault();
-      if (isConnecting && !isCapturing) return;
+      startClearingSelection();
+      if (isConnecting && !isCapturing) {
+        const stop = () => {
+          stopClearingSelection();
+          window.removeEventListener("pointerup", stop);
+          window.removeEventListener("pointercancel", stop);
+        };
+        window.addEventListener("pointerup", stop);
+        window.addEventListener("pointercancel", stop);
+        return;
+      }
       try {
         btnRef.current?.setPointerCapture(e.pointerId);
       } catch {
@@ -33,29 +63,38 @@ export function usePttButtonHandlers({
       }
       void handlePttDown();
     },
-    [handlePttDown, isConnecting, isCapturing],
+    [
+      handlePttDown,
+      isConnecting,
+      isCapturing,
+      startClearingSelection,
+      stopClearingSelection,
+    ],
   );
 
   const onPointerUp = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>) => {
       e.preventDefault();
+      stopClearingSelection();
       releaseCapture(e);
       void handlePttUp();
     },
-    [handlePttUp, releaseCapture],
+    [handlePttUp, releaseCapture, stopClearingSelection],
   );
 
   const onPointerCancel = useCallback(
     (e: React.PointerEvent<HTMLButtonElement>) => {
+      stopClearingSelection();
       releaseCapture(e);
       void handlePttUp();
     },
-    [handlePttUp, releaseCapture],
+    [handlePttUp, releaseCapture, stopClearingSelection],
   );
 
   const onLostPointerCapture = useCallback(() => {
+    stopClearingSelection();
     void handlePttUp();
-  }, [handlePttUp]);
+  }, [handlePttUp, stopClearingSelection]);
 
   return {
     btnRef,

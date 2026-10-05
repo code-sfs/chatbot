@@ -809,6 +809,18 @@
   visibility: hidden;
 }
 
+.bottom-control-footer,
+.bottom-control-bar,
+.bottom-control-mic-wrap,
+.bottom-control-hint,
+.bottom-control-mic-btn,
+.bottom-control-side-btn {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
 .bottom-control-mic-btn {
   position: relative;
   width: 72px;
@@ -1325,7 +1337,7 @@
   padding-bottom: 0.35rem;
 }
 
-/* Bottom mic hint */
+/* Bottom mic hint — not interactive, so a hold on the mic cannot select it */
 .bottom-control-hint {
   margin: 0 0 0.35rem;
   text-align: center;
@@ -1333,6 +1345,7 @@
   color: var(--ai-text-muted, rgba(61, 40, 23, 0.55));
   font-family: "Poppins", sans-serif;
   min-height: 1.25rem;
+  pointer-events: none;
 }
 
 .bottom-control-side-btn:hover {

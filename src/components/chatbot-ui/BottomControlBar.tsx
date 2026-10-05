@@ -34,7 +34,10 @@ export default function BottomControlBar({
       : "Hold to talk";
 
   return (
-    <div className="bottom-control-footer">
+    <div
+      className="bottom-control-footer"
+      onSelectStart={(e) => e.preventDefault()}
+    >
       <div className="bottom-control-bar">
         {leftSlot}
 
