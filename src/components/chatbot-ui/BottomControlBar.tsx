@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { FiMic, FiLoader } from "react-icons/fi";
 
@@ -32,12 +33,18 @@ export default function BottomControlBar({
     : isCapturing
       ? "Release to send your message"
       : "Hold to talk";
+  const footerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const footer = footerRef.current;
+    if (!footer) return;
+    const blockSelection = (e: Event) => e.preventDefault();
+    footer.addEventListener("selectstart", blockSelection);
+    return () => footer.removeEventListener("selectstart", blockSelection);
+  }, []);
 
   return (
-    <div
-      className="bottom-control-footer"
-      onSelectStart={(e) => e.preventDefault()}
-    >
+    <div ref={footerRef} className="bottom-control-footer">
       <div className="bottom-control-bar">
         {leftSlot}
 
