@@ -150,6 +150,9 @@ export interface ChatMessage {
   hybrid_row_count?: number;
   hybrid_sent?: boolean;
   suggested_questions?: SuggestedQuestion[];
+  /** Restored from the last-five-turns history. Live actions are not attached. */
+  fromHistory?: boolean;
+  askedAt?: number;
 }
 
 export interface ClassInfo {

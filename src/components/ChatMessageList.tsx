@@ -353,12 +353,24 @@ export default function ChatMessageList(props: ChatMessageListProps) {
           return (
           <div key={idx} className={`chatbot-msg-row ${msg.type}`}>
             {msg.type === "user" ? (
-              <>
+              msg.fromHistory && msg.askedAt ? (
+                <div className="chatbot-msg-user-col">
+                  <span className="chatbot-msg-bubble user">{msg.text}</span>
+                  <time
+                    className="chatbot-msg-time"
+                    dateTime={new Date(msg.askedAt).toISOString()}
+                  >
+                    {new Date(msg.askedAt).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </time>
+                </div>
+              ) : (
                 <span className="chatbot-msg-bubble user">{msg.text}</span>
-                {/* <span className="chatbot-msg-icon">
-                  <FiUser />
-                </span> */}
-              </>
+              )
             ) : (
               <div className="chatbot-msg-stack">
                 {/* <span className="chatbot-msg-icon">
@@ -2183,6 +2195,7 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                 }
                               />
                             ) : null}
+                            {!msg.fromHistory ? (
                             <div className="bot-actions-bottom">
                               <span className="bot-actions-label">
                                 Is this helpful?
@@ -2286,6 +2299,7 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                   )}
                               </div>
                             </div>
+                            ) : null}
                             </div>
                             {msg.feedbackMessage && (
                               <div className="feedback-status-msg">

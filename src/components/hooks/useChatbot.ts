@@ -16,6 +16,14 @@ import {
   studentLeaveApprovalAPI,
   getAIHeaders,
 } from "../../services/api";
+import {
+  initialChatHistory,
+  mergeHistory,
+  readRecentTurns,
+  rememberTurn,
+  snapshotFromAnswer,
+  writeRecentTurns,
+} from "../../services/recentTurns";
 import { API_BASE_URL } from "../../config/api";
 import {
   createVoiceAudioService,
@@ -139,6 +147,8 @@ export interface UseChatbotReturn {
   setSelectedLanguage: (v: string) => void;
   chatBoxRef: RefObject<HTMLDivElement | null>;
   chatHistory: any[];
+  /** True when a previous question-and-answer turn was restored. */
+  hasRestoredHistory: boolean;
   isProcessing: boolean;
   ttsLoading: number | null;
   editingMessageIndex: number | null;
@@ -331,8 +341,13 @@ export function useChatbot({
       ai_level?: string;
       catalog_id?: string;
       tts_text?: string;
+      fromHistory?: boolean;
+      askedAt?: number;
     }[]
-  >([]);
+  >(() => initialChatHistory(loginId));
+  const [hasRestoredHistory, setHasRestoredHistory] = useState(
+    () => readRecentTurns(loginId).length > 0,
+  );
 
   const [devices, setDevices] = useState<MediaDeviceInfo[]>([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState<string>("default");
@@ -577,6 +592,27 @@ export function useChatbot({
       // setUserOptionSelected(true);
     }
   }, []); // run only once
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    const loadRecentTurns = async () => {
+      try {
+        const data = await aiAPI.recentTurns(userId);
+        if (cancelled || !data.redis_enabled) return;
+        const turns = data.turns || [];
+        writeRecentTurns(loginId, turns);
+        setHasRestoredHistory(turns.length > 0);
+        setChatHistory((prev) => mergeHistory(prev, turns));
+      } catch (err) {
+        console.warn("Recent turns unavailable:", err);
+      }
+    };
+    void loadRecentTurns();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, loginId]);
 
   useEffect(() => {
     const fetchMicrophones = async () => {
@@ -2475,6 +2511,20 @@ export function useChatbot({
           cache_entry_id: cachedSuggestion?.cacheEntryId,
         });
         if (data.status === "success" && data.data) {
+          const historyTurn = snapshotFromAnswer(userMessage, {
+            answer: data.data.answer,
+            table_data: data.data.table_data,
+            kpi_cards: data.data.kpi_cards,
+            findings: data.data.findings,
+            visualization: data.data.visualization,
+            ai_level: data.data.ai_level,
+            catalog_id: data.data.catalog_id,
+            recommendations: data.data.recommendations,
+            layout: data.data.layout,
+          });
+          if (historyTurn && !isExitResponse(data.data)) {
+            rememberTurn(loginId, historyTurn);
+          }
           setChatHistory((prev) => [
             ...prev,
             {
@@ -4336,6 +4386,7 @@ export function useChatbot({
     setSelectedLanguage,
     chatBoxRef,
     chatHistory,
+    hasRestoredHistory,
     isProcessing,
     ttsLoading,
     editingMessageIndex,
