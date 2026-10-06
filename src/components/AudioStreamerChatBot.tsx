@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import "./markdown-tables.css";
 import "./chatbot.css";
@@ -12,6 +12,7 @@ import HomeView from "./chatbot-ui/HomeView";
 import VoiceView from "./chatbot-ui/VoiceView";
 import type { ChatbotScreen } from "./chatbotData";
 import { useChatbot } from "./hooks/useChatbot";
+import { readRecentTurns } from "../services/recentTurns";
 
 const AudioStreamerChatBot = ({
   userId,
@@ -30,9 +31,19 @@ const AudioStreamerChatBot = ({
   // const api = useChatbot({ userId, roles, email });
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewFilename, setPreviewFilename] = useState<string>("Attachment");
-  const [screen, setScreen] = useState<ChatbotScreen>("home");
+  const [screen, setScreen] = useState<ChatbotScreen>(() =>
+    readRecentTurns(loginId).length > 0 ? "chat" : "home",
+  );
+  const navigatedRef = useRef(false);
+
+  useEffect(() => {
+    if (!navigatedRef.current && api.hasRestoredHistory) {
+      setScreen("chat");
+    }
+  }, [api.hasRestoredHistory]);
 
   const handleSelectPrompt = (prompt: string) => {
+    navigatedRef.current = true;
     setScreen("chat");
     void api.handleSubmit(prompt);
   };
@@ -70,7 +81,10 @@ const AudioStreamerChatBot = ({
             <HomeView
               userName={guestFirstName || api.firstName || firstName || loginId}
               roles={roles}
-              onNavigate={(next) => setScreen(next)}
+              onNavigate={(next) => {
+                navigatedRef.current = true;
+                setScreen(next);
+              }}
               onSelectPrompt={handleSelectPrompt}
             />
             </motion.div>
@@ -86,7 +100,10 @@ const AudioStreamerChatBot = ({
               transition={{ duration: 0.22, ease: "easeOut" }}
             >
             <VoiceView
-              onBack={() => setScreen("home")}
+              onBack={() => {
+                navigatedRef.current = true;
+                setScreen("home");
+              }}
               onOpenChat={() => setScreen("chat")}
               transcript={api.inputText}
               isCapturing={api.isPttCapturing}
@@ -108,6 +125,7 @@ const AudioStreamerChatBot = ({
               userId={api.userId}
               getErpContext={api.getErpContext}
               setChatHistory={api.setChatHistory}
+              handleSubmit={api.handleSubmit}
             />
             </motion.div>
           )}
@@ -122,7 +140,10 @@ const AudioStreamerChatBot = ({
             transition={{ duration: 0.22, ease: "easeOut" }}
           >
           <ChatHeaderWithMenu
-            onBack={() => setScreen("home")}
+            onBack={() => {
+              navigatedRef.current = true;
+              setScreen("home");
+            }}
             menuRef={api.menuRef}
             isMenuOpen={api.isMenuOpen}
             setIsMenuOpen={api.setIsMenuOpen}

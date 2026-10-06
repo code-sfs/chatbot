@@ -2,7 +2,13 @@
  * Chat message list: attendance step indicator, message map (user/bot, attendance table, leave approval, etc.), processing indicator.
  * Extracted from AudioStreamerChatBot to reduce main file size.
  */
-import { FiThumbsDown, FiThumbsUp, FiVolume2 } from "react-icons/fi";
+import {
+  FiChevronRight,
+  FiMessageCircle,
+  FiThumbsDown,
+  FiThumbsUp,
+  FiVolume2,
+} from "react-icons/fi";
 import MemoizedAnswer from "./MemoizedAnswer";
 import PaginatedDataTable from "./PaginatedDataTable";
 import KpiCardRow from "./KpiCardRow";
@@ -11,7 +17,7 @@ import RecommendationsList from "./RecommendationsList";
 import BoardPackReview from "./BoardPackReview";
 import ManagerBriefDashboard from "./ManagerBriefDashboard";
 import { resolveManagerBrief } from "../utils/resolveManagerBrief";
-import VisualizationRenderer from "./VisualizationRenderer";
+import { GraphViewToggle } from "./VisualizationRenderer";
 import ActionEngine from "./ActionEngine";
 import HybridActionPanel from "./HybridActionPanel";
 import { MarksEntryTable } from "./MarksEntryTable";
@@ -338,24 +344,42 @@ export default function ChatMessageList(props: ChatMessageListProps) {
 
         {chatHistory.map((msg, idx) => {
           const managerBrief = resolveManagerBrief(msg);
+          const showAnswerCard =
+            !managerBrief &&
+            !(msg as any).isProcessing &&
+            Boolean(
+              msg.answer || msg.table_data || msg.suggested_questions?.length,
+            );
           return (
           <div key={idx} className={`chatbot-msg-row ${msg.type}`}>
             {msg.type === "user" ? (
-              <>
+              msg.fromHistory && msg.askedAt ? (
+                <div className="chatbot-msg-user-col">
+                  <span className="chatbot-msg-bubble user">{msg.text}</span>
+                  <time
+                    className="chatbot-msg-time"
+                    dateTime={new Date(msg.askedAt).toISOString()}
+                  >
+                    {new Date(msg.askedAt).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </time>
+                </div>
+              ) : (
                 <span className="chatbot-msg-bubble user">{msg.text}</span>
-                {/* <span className="chatbot-msg-icon">
-                  <FiUser />
-                </span> */}
-              </>
+              )
             ) : (
-              <>
+              <div className="chatbot-msg-stack">
                 {/* <span className="chatbot-msg-icon">
                   <FiCpu />
                 </span> */}
                 <div
                   className={`chatbot-msg-bubble bot relative${
                     managerBrief ? " chatbot-msg-bubble--brief" : ""
-                  }`}
+                  }${showAnswerCard ? " chatbot-msg-bubble--answer" : ""}`}
                 >
                   {/* Processing indicator for image processing */}
                   {(msg as any).isProcessing && (
@@ -2009,7 +2033,7 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                           />
                                         ) : null;
                                       case "Narrative":
-                                        return (
+                                        return msg.table_data?.rows?.length ? null : (
                                           <MemoizedAnswer
                                             key={bIdx}
                                             answer={msg.answer || ""}
@@ -2053,12 +2077,24 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                           setChatHistory,
                                         });
                                       case "TrendChart":
-                                        return msg.visualization?.show_chart &&
-                                          msg.visualization &&
+                                        return msg.visualization &&
                                           !msg.hybrid_action_available ? (
-                                          <VisualizationRenderer
+                                          <GraphViewToggle
                                             key={bIdx}
                                             visualization={msg.visualization}
+                                            open={Boolean(msg.graph_open)}
+                                            onToggle={() =>
+                                              setChatHistory((prev) => {
+                                                const next = [...prev];
+                                                const current = next[idx];
+                                                if (!current) return prev;
+                                                next[idx] = {
+                                                  ...current,
+                                                  graph_open: !current.graph_open,
+                                                };
+                                                return next;
+                                              })
+                                            }
                                           />
                                         ) : null;
                                       case "ActionEngine":
@@ -2079,11 +2115,13 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                 {msg.kpi_cards?.length ? (
                                   <KpiCardRow cards={msg.kpi_cards} />
                                 ) : null}
-                                <MemoizedAnswer
-                                  answer={msg.answer || ""}
-                                  messageIdx={idx}
-                                  onOpenPreview={onOpenPreview}
-                                />
+                                {msg.table_data?.rows?.length ? null : (
+                                  <MemoizedAnswer
+                                    answer={msg.answer || ""}
+                                    messageIdx={idx}
+                                    onOpenPreview={onOpenPreview}
+                                  />
+                                )}
                                 {msg.findings?.length ? (
                                   <FindingsList items={msg.findings} />
                                 ) : null}
@@ -2095,16 +2133,6 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                 })}
                               </>
                             )}
-                            {/* Legacy chart placement: only when NOT layout-driven
-                                (the L4 layout renders its own TrendChart block). */}
-                            {!msg.layout?.length &&
-                            msg.visualization?.show_chart &&
-                            msg.visualization &&
-                            !msg.hybrid_action_available ? (
-                              <VisualizationRenderer
-                                visualization={msg.visualization}
-                              />
-                            ) : null}
                             {msg.marks_table && (
                               <MarksEntryTable
                                 data={msg.marks_table}
@@ -2146,34 +2174,32 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                 speakBotMessage={speakHealthCardBotMessage}
                               />
                             )}
-                            {msg.suggested_questions?.length ? (
-                              <div className="chat-followup-suggestions">
-                                <div className="chat-followup-label">
-                                  Related questions
-                                </div>
-                                {msg.suggested_questions.map((item: SuggestedQuestion) => (
-                                  <button
-                                    key={item.cache_entry_id}
-                                    type="button"
-                                    className="suggested-prompt-chip"
-                                    disabled={isProcessing || !item.question}
-                                    onClick={() =>
-                                      handleSubmit(item.question, {
-                                        cacheEntryId: item.cache_entry_id,
-                                        flow:
-                                          item.intent === "faq" ||
-                                          item.intent === "hybrid"
-                                            ? item.intent
-                                            : "query",
-                                      })
-                                    }
-                                  >
-                                    {item.question}
-                                  </button>
-                                ))}
-                              </div>
+                            <div className="answer-toolbar">
+                            {!msg.layout?.length &&
+                            msg.visualization &&
+                            !msg.hybrid_action_available ? (
+                              <GraphViewToggle
+                                visualization={msg.visualization}
+                                open={Boolean(msg.graph_open)}
+                                onToggle={() =>
+                                  setChatHistory((prev) => {
+                                    const next = [...prev];
+                                    const current = next[idx];
+                                    if (!current) return prev;
+                                    next[idx] = {
+                                      ...current,
+                                      graph_open: !current.graph_open,
+                                    };
+                                    return next;
+                                  })
+                                }
+                              />
                             ) : null}
+                            {!msg.fromHistory ? (
                             <div className="bot-actions-bottom">
+                              <span className="bot-actions-label">
+                                Is this helpful?
+                              </span>
                               <button
                                 className="bot-action-btn"
                                 title="Listen"
@@ -2273,6 +2299,8 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                   )}
                               </div>
                             </div>
+                            ) : null}
+                            </div>
                             {msg.feedbackMessage && (
                               <div className="feedback-status-msg">
                                 {msg.feedbackMessage}
@@ -2305,7 +2333,49 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                     </>
                   )}
                 </div>
-              </>
+                {msg.suggested_questions?.length ? (
+                  <div className="chat-followup-suggestions">
+                    <div className="chat-followup-label">Ask next</div>
+                    {msg.suggested_questions.map(
+                      (item: SuggestedQuestion, suggestionIdx: number) => (
+                        <button
+                          key={item.cache_entry_id}
+                          type="button"
+                          className="chat-followup-row"
+                          style={{
+                            animationDelay: `${suggestionIdx * 60}ms`,
+                          }}
+                          disabled={isProcessing || !item.question}
+                          onClick={() =>
+                            handleSubmit(item.question, {
+                              cacheEntryId: item.cache_entry_id,
+                              flow:
+                                item.intent === "faq" ||
+                                item.intent === "hybrid"
+                                  ? item.intent
+                                  : "query",
+                            })
+                          }
+                        >
+                          <FiMessageCircle
+                            className="chat-followup-icon"
+                            size={14}
+                            aria-hidden
+                          />
+                          <span className="chat-followup-text">
+                            {item.question}
+                          </span>
+                          <FiChevronRight
+                            className="chat-followup-chevron"
+                            size={14}
+                            aria-hidden
+                          />
+                        </button>
+                      ),
+                    )}
+                  </div>
+                ) : null}
+              </div>
             )}
           </div>
           );

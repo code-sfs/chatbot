@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { FiMic, FiMessageCircle } from "react-icons/fi";
+import { FiChevronRight, FiMic, FiMessageCircle } from "react-icons/fi";
 import AiMascot from "./AiMascot";
 import { QUICK_ACTIONS } from "../chatbotData";
 import type { ChatbotScreen } from "../chatbotData";
@@ -8,6 +8,7 @@ import { getSuggestedPrompts } from "../../utils/resolvePersona";
 import { formatDisplayName } from "./formatDisplayName";
 
 const HOP_THEN_RUN_MS = 1050;
+const VISIBLE_PROMPT_COUNT = 6;
 
 interface HomeViewProps {
   userName?: string | null;
@@ -28,7 +29,15 @@ export default function HomeView({
   const displayName = formatDisplayName(userName);
   const suggestedPrompts = getSuggestedPrompts(roles);
   const [departing, setDeparting] = useState(false);
+  const [showAllPrompts, setShowAllPrompts] = useState(false);
   const leavingRef = useRef(false);
+  const visiblePrompts = showAllPrompts
+    ? suggestedPrompts
+    : suggestedPrompts.slice(0, VISIBLE_PROMPT_COUNT);
+  const hiddenPromptCount = Math.max(
+    0,
+    suggestedPrompts.length - VISIBLE_PROMPT_COUNT,
+  );
 
   const handlePromptClick = (prompt: string) => {
     if (leavingRef.current) return;
@@ -72,7 +81,7 @@ export default function HomeView({
       <div className="home-prompts-section">
         <p className="home-section-label">Try asking</p>
         <div className="suggested-prompts-scroll">
-          {suggestedPrompts.map((prompt) => (
+          {visiblePrompts.map((prompt) => (
             <button
               key={prompt}
               type="button"
@@ -80,9 +89,29 @@ export default function HomeView({
               onClick={() => handlePromptClick(prompt)}
               disabled={departing}
             >
-              {prompt}
+              <FiMessageCircle
+                className="home-prompt-icon"
+                size={15}
+                aria-hidden
+              />
+              <span className="home-prompt-text">{prompt}</span>
+              <FiChevronRight
+                className="home-prompt-chevron"
+                size={15}
+                aria-hidden
+              />
             </button>
           ))}
+          {hiddenPromptCount > 0 ? (
+            <button
+              type="button"
+              className="home-prompts-more"
+              onClick={() => setShowAllPrompts((open) => !open)}
+              disabled={departing}
+            >
+              {showAllPrompts ? "Show less" : `More (${hiddenPromptCount})`}
+            </button>
+          ) : null}
         </div>
       </div>
 

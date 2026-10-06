@@ -125,6 +125,8 @@ export interface ChatMessage {
   classSection?: ClassSectionOption;
   classSectionsOptions?: any[];
   visualization?: Visualization;
+  /** When a chart exists, the user turns it on from the View graph button. */
+  graph_open?: boolean;
   table_data?: TableData;
   kpi_cards?: KpiCard[];
   findings?: string[];
@@ -148,6 +150,9 @@ export interface ChatMessage {
   hybrid_row_count?: number;
   hybrid_sent?: boolean;
   suggested_questions?: SuggestedQuestion[];
+  /** Restored from the last-five-turns history. Live actions are not attached. */
+  fromHistory?: boolean;
+  askedAt?: number;
 }
 
 export interface ClassInfo {

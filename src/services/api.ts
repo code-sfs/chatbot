@@ -746,6 +746,25 @@ export const aiAPI = {
     return await parseJsonResponse<QueryHandlerResponse>(response);
   },
 
+  recentTurns: async (
+    userId: string,
+  ): Promise<{
+    status: string;
+    redis_enabled?: boolean;
+    turns?: import("./recentTurns").RecentTurn[];
+    message?: string;
+  }> => {
+    const params = new URLSearchParams({ user_id: userId });
+    const response = await fetch(
+      `${API_BASE_URL}/v1/ai/recent-turns?${params.toString()}`,
+      {
+        method: "GET",
+        headers: getAIHeaders(),
+      },
+    );
+    return await parseJsonResponse(response);
+  },
+
   resolveApprovalDisambiguation: async (request: {
     reply: string;
   }): Promise<{ status: string; resolved: "student" | "teacher" | "unclear" }> => {
