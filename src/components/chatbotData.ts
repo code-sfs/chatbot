@@ -154,17 +154,23 @@ export const SUGGESTED_PROMPTS_BY_PERSONA: Record<PersonaGroup, string[]> = {
 
   hr: [
 
-    "Show my profile summary",
+    "Give me today's HR summary.",
 
-    "List employees on leave today",
+    "Who is absent today, and which absences need my attention?",
 
-    "Show staff joining this month",
+    "Which employees have excessive leave this month?",
 
-    "List pending leave approvals",
+    "Which employees have frequent attendance issues?",
 
-    "Show employee count by department",
+    "Show me all pending leave requests.",
 
-    "When did I join this school?",
+    "Which employees are approaching their leave limit?",
+
+    "Which employees are completing probation soon?",
+
+    "Which employee contracts are expiring soon?",
+
+    "List of teacher having birthday this month",
 
   ],
 
