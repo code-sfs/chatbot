@@ -1397,6 +1397,7 @@ export function useChatbot({
     entities: any;
     validation_status?: string;
     clarification_question?: string;
+    message?: string;
   }> => {
     try {
       const response = await fetch(`${API_BASE_URL}/v1/ai/classify-query`, { //fetch(...) ->Browser sends HTTP request to backend
@@ -1418,6 +1419,7 @@ export function useChatbot({
           entities,
           validation_status,
           clarification_question,
+          message,
         } = data.data;
 
         console.log("[Routing] Query classification:", {
@@ -1433,6 +1435,7 @@ export function useChatbot({
           entities,
           validation_status,
           clarification_question,
+          message,
         };
       }
 
@@ -1533,6 +1536,7 @@ export function useChatbot({
       entities: any;
       validation_status?: string;
       clarification_question?: string;
+      message?: string;
     } | null = null;
     let disambiguationResolvedFlow: FlowType | null = null;
 
@@ -2003,8 +2007,22 @@ export function useChatbot({
             } as any;
             targetFlow = "health_card" as FlowType;
           } else {
-            classificationResult = await classifyQuery(userMessage);  
+            classificationResult = await classifyQuery(userMessage);
             console.log("✅ Classification complete:", classificationResult);
+            const budgetMessage = classificationResult?.message;
+            if (classificationResult?.validation_status === "budget_exceeded") {
+              setChatHistory((prev) => [
+                ...prev,
+                {
+                  type: "bot",
+                  answer:
+                    budgetMessage ||
+                    "Budget exceeded. Try after 24 hrs.",
+                },
+              ]);
+              setIsProcessing(false);
+              return;
+            }
             targetFlow = classificationResult.flow as FlowType;  // the question now is classified  
           }
 
