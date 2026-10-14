@@ -1396,7 +1396,7 @@ export function useChatbot({
       const response = await fetch(`${API_BASE_URL}/v1/ai/classify-query`, { //fetch(...) ->Browser sends HTTP request to backend
         method: "POST",
         headers: getAIHeaders(),
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           query: message,
           user_id: userId,
           user_roles: roles ? roles.split(",").map(r => r.trim()) : [],
@@ -1737,20 +1737,20 @@ export function useChatbot({
           : activeFlow;
       // Don't show old detection when in multi-step flow
       setDetectedFlow(null);
-    // Disabled: skipping classify in query/faq flow dropped validation_status
-    // (e.g. llm_intent_faq), so repeat FAQ questions took the normal query path
-    // and failed. Always re-classify new query/faq messages instead.
-    // } else if (
-    //   (activeFlowRef.current === "query" ||
-    //     activeFlowRef.current === "faq" ||
-    //     activeFlow === "query" ||
-    //     activeFlow === "faq") &&
-    //   !looksLikeNewRequest
-    // ) {
-    //   targetFlow =
-    //     activeFlowRef.current === "faq" || activeFlow === "faq" ? "faq" : "query";
-    //   setDetectedFlow(targetFlow);
-    //   console.log("[Routing] Skipping classify — already in query/faq flow");
+      // Disabled: skipping classify in query/faq flow dropped validation_status
+      // (e.g. llm_intent_faq), so repeat FAQ questions took the normal query path
+      // and failed. Always re-classify new query/faq messages instead.
+      // } else if (
+      //   (activeFlowRef.current === "query" ||
+      //     activeFlowRef.current === "faq" ||
+      //     activeFlow === "query" ||
+      //     activeFlow === "faq") &&
+      //   !looksLikeNewRequest
+      // ) {
+      //   targetFlow =
+      //     activeFlowRef.current === "faq" || activeFlow === "faq" ? "faq" : "query";
+      //   setDetectedFlow(targetFlow);
+      //   console.log("[Routing] Skipping classify — already in query/faq flow");
     } else if (
       isVoiceTriggeredForThisRequest &&
       looksLikeInformationQuery(userMessage) &&
@@ -1820,136 +1820,14 @@ export function useChatbot({
         // Run classification for every new query when auto-routing is enabled
         console.log("[Routing] Running classification...");
         try {
-          // Deterministic lexical override: if the normalized tokens contain
-          // the token 'leave' (or 'leaves') AND at least one explicit
-          // approval token, force the leave_approval flow and skip the
-          // classifier. This prevents STT artifacts from misrouting.
+          // Leave approval is classified by the API LLM (queue vs report).
+          // Do not keyword-force student_leave_approval or leave_approval here.
           const normalized = userMessage
             .toLowerCase()
             .replace(/[^a-z0-9\s]/g, " ")
             .trim();
-          const tokens = normalized.split(/\s+/).filter(Boolean);
-          const hasLeaveToken =
-            tokens.includes("leave") || tokens.includes("leaves");
-          const approvalTokens = ["approval", "approve", "approvals"];
-          const hasApprovalToken = approvalTokens.some((t) =>
-            tokens.includes(t),
-          );
-
-          const studentLeaveApprovalKeywords = [
-            "student leave approval",
-            "approve student leave",
-            "student leave requests",
-            "pending student leaves",
-          ];
-          const hasStudentLeaveApprovalKeyword =
-            studentLeaveApprovalKeywords.some((keyword) =>
-              normalized.includes(keyword),
-            );
-
-          const teacherLeaveApprovalKeywords = [
-            "teacher leave approval",
-            "approve teacher leave",
-            "teacher leave requests",
-            "approve staff leave",
-            "staff leave approval",
-            "staff leave requests",
-            "employee leave approval",
-            "approve employee leave",
-          ];
-          const hasTeacherLeaveApprovalKeyword =
-            teacherLeaveApprovalKeywords.some((keyword) =>
-              normalized.includes(keyword),
-            );
-
-          const ambiguousApprovalPhrases = [
-            "pending approvals",
-            "approve requests",
-            "leave approval",
-            "approval requests",
-            "pending approval",
-            "show approval",
-            "show approvals",
-            "approvals",
-            "view approvals",
-            "check approvals",
-            "my approvals",
-            "leave approvals",
-          ];
-          const isAmbiguousApproval =
-            (normalized === "approval" || normalized === "approvals") ||
-            (ambiguousApprovalPhrases.some((phrase) =>
-              normalized.includes(phrase),
-            ) &&
-              !normalized.includes("student") &&
-              !normalized.includes("teacher") &&
-              !normalized.includes("staff") &&
-              !normalized.includes("employee"));
-
-          // Allowlist-only: these how-to FAQ variants must not hit leave-approval
-          // overrides (other approval routing stays unchanged).
-          const isLeaveApprovalStatusFaqAllowlist = normalized.includes(
-            "check my leave approval status on mobile",
-          );
 
           if (
-            !isLeaveApprovalStatusFaqAllowlist &&
-            hasStudentLeaveApprovalKeyword
-          ) {
-            console.log(
-              "[Routing] Lexical override: forcing student_leave_approval based on keywords",
-              { normalized },
-            );
-            classificationResult = {
-              flow: "student_leave_approval",
-              confidence: 1,
-            } as any;
-            targetFlow = "student_leave_approval" as FlowType;
-          } else if (
-            !isLeaveApprovalStatusFaqAllowlist &&
-            isAmbiguousApproval
-          ) {
-            console.log(
-              "[Routing] Lexical override: forcing approval_disambiguation",
-              { normalized },
-            );
-            classificationResult = {
-              flow: "approval_disambiguation",
-              confidence: 1,
-              clarification_question: APPROVAL_DISAMBIGUATION_QUESTION,
-            } as any;
-            targetFlow = "approval_disambiguation" as FlowType;
-          } else if (
-            !isLeaveApprovalStatusFaqAllowlist &&
-            hasTeacherLeaveApprovalKeyword
-          ) {
-            console.log(
-              "[Routing] Lexical override: forcing leave_approval (teacher) based on keywords",
-              { normalized },
-            );
-            classificationResult = {
-              flow: "leave_approval",
-              confidence: 1,
-            } as any;
-            targetFlow = "leave_approval" as FlowType;
-          } else if (
-            !isLeaveApprovalStatusFaqAllowlist &&
-            hasLeaveToken &&
-            hasApprovalToken
-          ) {
-            console.log(
-              "[Routing] Lexical override: forcing leave_approval based on tokens",
-              { tokens },
-            );
-            // Mark classificationResult so downstream logic treats this as a
-            // detected/new flow (same shape as classifier result). We set a
-            // high confidence to avoid low-confidence overrides later.
-            classificationResult = {
-              flow: "leave_approval",
-              confidence: 1,
-            } as any;
-            targetFlow = "leave_approval" as FlowType;
-          } else if (
             [
               "health card",
               "health cards",
@@ -1968,7 +1846,7 @@ export function useChatbot({
             } as any;
             targetFlow = "health_card" as FlowType;
           } else {
-            classificationResult = await classifyQuery(userMessage);  
+            classificationResult = await classifyQuery(userMessage);
             console.log("✅ Classification complete:", classificationResult);
             targetFlow = classificationResult.flow as FlowType;  // the question now is classified  
           }
@@ -2465,7 +2343,7 @@ export function useChatbot({
               action_type: data.data?.action_type,
               hybrid_catalog_id: data.data?.hybrid_catalog_id,
               hybrid_row_count: data.data?.hybrid_row_count,
-            
+
             },
           ]);
           // Ã¢Â­Â NEW: Check for exit response
@@ -2734,6 +2612,7 @@ export function useChatbot({
 
         const response = await aiAPI.courseProgressChat({
           session_id: sessionId,
+          user_id: userId,
           query: userMessage,
           bearer_token: authToken || undefined,
           academic_session,
@@ -2856,6 +2735,19 @@ export function useChatbot({
             branch_token,
           });
 
+          if (String(response.status) === "unauthorized") {
+            setChatHistory((prev) => [
+              ...prev,
+              {
+                type: "bot",
+                answer: response.message,
+                activeTab: "answer" as const,
+              },
+            ]);
+            handleFlowExit({ newSession: false, skipTTSInterrupt: true });
+            return;
+          }
+
           if (response.status === 200 && response.data) {
             setLeaveApprovalRequests(response.data.leaveRequests || []);
             setChatHistory((prev) => [
@@ -2971,6 +2863,19 @@ export function useChatbot({
             academic_session,
             branch_token,
           });
+
+          if (String(response.status) === "unauthorized") {
+            setChatHistory((prev) => [
+              ...prev,
+              {
+                type: "bot",
+                answer: response.message,
+                activeTab: "answer" as const,
+              },
+            ]);
+            handleFlowExit({ newSession: false, skipTTSInterrupt: true });
+            return;
+          }
 
           if (response.status === 200 && response.data) {
             setStudentLeaveApprovalRequests(response.data.leaveRequests || []);
@@ -3661,9 +3566,8 @@ export function useChatbot({
           ...prev,
           {
             type: "bot",
-            text: `❌ No attendance data found. Please try ${
-              attendanceType === "text" ? "entering" : "uploading"
-            } the attendance information again.`,
+            text: `❌ No attendance data found. Please try ${attendanceType === "text" ? "entering" : "uploading"
+              } the attendance information again.`,
           },
         ]);
         return;
@@ -3695,11 +3599,9 @@ export function useChatbot({
           const filtered = prev.filter(
             (msg) => !(msg.text && msg.text.includes("Ã¢ÂÂ³ Processing")),
           );
-          const successMessage = `✅ ${
-            attendanceType.charAt(0).toUpperCase() + attendanceType.slice(1)
-          } attendance saved successfully! ${
-            data.data?.message || "Data has been saved to MongoDB."
-          }`;
+          const successMessage = `✅ ${attendanceType.charAt(0).toUpperCase() + attendanceType.slice(1)
+            } attendance saved successfully! ${data.data?.message || "Data has been saved to MongoDB."
+            }`;
           return [
             ...filtered,
             {
@@ -3745,9 +3647,8 @@ export function useChatbot({
       }
     } catch (err) {
       console.error(`Error saving ${attendanceType} attendance:`, err);
-      const errorMessage = `❌ Failed to save ${attendanceType} attendance: ${
-        (err as Error).message
-      }`;
+      const errorMessage = `❌ Failed to save ${attendanceType} attendance: ${(err as Error).message
+        }`;
       setChatHistory((prev) => {
         const filtered = prev.filter(
           (msg) => !(msg.text && msg.text.includes("Ã¢ÂÂ³ Processing")),
@@ -3917,9 +3818,8 @@ export function useChatbot({
                     (item) =>
                       `| ${item.student_name} | ${item.attendance_status} |`,
                   )
-                  .join("\n")}\n\nClass: ${currentClassInfo?.class_} ${
-                  currentClassInfo?.section
-                } on ${currentClassInfo?.date}`,
+                  .join("\n")}\n\nClass: ${currentClassInfo?.class_} ${currentClassInfo?.section
+                  } on ${currentClassInfo?.date}`,
               };
             }
             return msg;
@@ -4085,7 +3985,7 @@ export function useChatbot({
       const columnSavedText = String(result?.data?.column_saved || "");
       const isExpectedSaveResponse =
         columnSavedText.trim().toLowerCase() ===
-          columnTitle.trim().toLowerCase() ||
+        columnTitle.trim().toLowerCase() ||
         answerText.toLowerCase().includes("saved for all students");
 
       if (isExpectedSaveResponse && answerText) {
