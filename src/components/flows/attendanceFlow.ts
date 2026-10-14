@@ -83,6 +83,7 @@ export interface AttendanceChatParams {
   userMessage: string;
   sessionId: string;
   userId: string;
+  userRoles?: string[];
   isVoiceTriggered: boolean;
   callbacks: AttendanceFlowCallbacks;
 }
@@ -265,7 +266,8 @@ export function createReviewButtons(
   classInfo: ClassInfo | null,
   sessionId: string,
   userId: string,
-  isVoiceTriggered: boolean
+  isVoiceTriggered: boolean,
+  userRoles?: string[]
 ): Array<{ label: string; action: () => void }> {
   return [
     {
@@ -297,6 +299,7 @@ export function createReviewButtons(
         await handleAttendanceApproval({
           sessionId,
           userId,
+          userRoles,
           attendanceData: dataToUse,
           classInfo: classInfoToUse,
           isVoiceTriggered,
@@ -319,7 +322,7 @@ export function createReviewButtons(
 export async function handleAttendanceChat(
   params: AttendanceChatParams
 ): Promise<void> {
-  const { userMessage, sessionId, userId, isVoiceTriggered, callbacks } = params;
+  const { userMessage, sessionId, userId, userRoles, isVoiceTriggered, callbacks } = params;
   const state = callbacks.getAttendanceState();
   const msg = userMessage.trim();
 
@@ -329,6 +332,7 @@ export async function handleAttendanceChat(
       session_id: sessionId,
       query: msg,
       user_id: userId,
+      user_roles: userRoles,
     });
 
     if (response.status === "success" && response.data) {
@@ -384,7 +388,8 @@ export async function handleAttendanceChat(
           finalClassInfo ?? state.classInfo,
           sessionId,
           userId,
-          isVoiceTriggered
+          isVoiceTriggered,
+          userRoles
         );
 
         callbacks.appendBotMessage({
@@ -466,6 +471,7 @@ function generateAttendanceSummaryMessage(
 interface ApprovalParams {
   sessionId: string;
   userId: string;
+  userRoles?: string[];
   attendanceData: AttendanceRecord[];
   classInfo: ClassInfo | null;
   isVoiceTriggered: boolean;
@@ -473,7 +479,7 @@ interface ApprovalParams {
 }
 
 async function handleAttendanceApproval(params: ApprovalParams): Promise<void> {
-  const { sessionId, userId, attendanceData, classInfo, isVoiceTriggered, callbacks } = params;
+  const { sessionId, userId, userRoles, attendanceData, classInfo, isVoiceTriggered, callbacks } = params;
 
   if (!attendanceData || attendanceData.length === 0) {
     callbacks.appendBotMessage({
@@ -498,6 +504,7 @@ async function handleAttendanceApproval(params: ApprovalParams): Promise<void> {
         class_info: classInfo,
       })}`,
       user_id: userId,
+      user_roles: userRoles,
     });
 
     if (response.status === "success") {
@@ -589,11 +596,12 @@ export async function handleAttendanceImageUpload(params: {
   file: File;
   sessionId: string;
   userId: string;
+  userRoles?: string[];
   classInfo: ClassInfo;
   isVoiceTriggered: boolean;
   callbacks: AttendanceFlowCallbacks;
 }): Promise<void> {
-  const { file, sessionId, userId, classInfo, isVoiceTriggered, callbacks } = params;
+  const { file, sessionId, userId, userRoles, classInfo, isVoiceTriggered, callbacks } = params;
 
   callbacks.appendBotMessage({
     type: "bot",
@@ -630,7 +638,8 @@ export async function handleAttendanceImageUpload(params: {
         classInfo,
         sessionId,
         userId,
-        isVoiceTriggered
+        isVoiceTriggered,
+        userRoles
       );
 
       callbacks.appendBotMessage({

@@ -226,6 +226,11 @@ const AudioStreamerChatBot = ({
             setChatHistory={api.setChatHistory}
             sessionId={api.sessionId}
             userId={api.userId}
+            userRoles={
+              api.roles
+                ? api.roles.split(",").map((r: string) => r.trim()).filter(Boolean)
+                : []
+            }
             classInfo={api.classInfo}
             pendingClassInfo={api.pendingClassInfo}
             attendanceFlowState={api.attendanceFlowState}

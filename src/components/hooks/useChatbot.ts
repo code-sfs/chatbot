@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { TabType, FlowType } from "../types";
 import { isExitResponse, generateQueryTTSSummary } from "../utils/chatbotUtils";
+import { roleDenialMessage } from "../../utils/actionFlowAccess";
 import {
   mergePttFinalSegment,
   buildPttLiveDisplay,
@@ -1386,6 +1387,10 @@ export function useChatbot({
     return hasQueryVerb || (hasDataNoun && n.includes("?"));
   };
 
+  const userRolesList = roles
+    ? roles.split(",").map((role) => role.trim()).filter(Boolean)
+    : [];
+
   /**
    * Classify user query to determine appropriate flow
    */
@@ -1397,6 +1402,8 @@ export function useChatbot({
     entities: any;
     validation_status?: string;
     clarification_question?: string;
+    message?: string;
+    tts_text?: string;
   }> => {
     try {
       const response = await fetch(`${API_BASE_URL}/v1/ai/classify-query`, { //fetch(...) ->Browser sends HTTP request to backend
@@ -1405,7 +1412,7 @@ export function useChatbot({
         body: JSON.stringify({ 
           query: message,
           user_id: userId,
-          user_roles: roles ? roles.split(",").map(r => r.trim()) : [],
+          user_roles: userRolesList,
         }),
       });
 
@@ -1418,6 +1425,8 @@ export function useChatbot({
           entities,
           validation_status,
           clarification_question,
+          message: responseMessage,
+          tts_text,
         } = data.data;
 
         console.log("[Routing] Query classification:", {
@@ -1433,6 +1442,8 @@ export function useChatbot({
           entities,
           validation_status,
           clarification_question,
+          message: responseMessage,
+          tts_text,
         };
       }
 
@@ -1533,6 +1544,8 @@ export function useChatbot({
       entities: any;
       validation_status?: string;
       clarification_question?: string;
+      message?: string;
+      tts_text?: string;
     } | null = null;
     let disambiguationResolvedFlow: FlowType | null = null;
 
@@ -2053,6 +2066,42 @@ export function useChatbot({
         }
       }
 
+      const backendDenied =
+        classificationResult?.validation_status === "role_unauthorized" ||
+        classificationResult?.flow === "unauthorized";
+      const denialMessage = backendDenied
+        ? classificationResult?.message ||
+          roleDenialMessage(
+            classificationResult?.flow || targetFlow,
+            userRolesList,
+          )
+        : roleDenialMessage(targetFlow, userRolesList);
+      if (denialMessage && !flowToExitOnCommand) {
+        const spoken =
+          (backendDenied && classificationResult?.tts_text) ||
+          denialMessage.replace(/^🚫\s*/, "");
+        setChatHistory((prev) => [
+          ...prev,
+          { type: "bot", text: denialMessage },
+        ]);
+        setDetectedFlow(null);
+        const inActionFlow =
+          activeFlowRef.current !== "none" &&
+          activeFlowRef.current !== "query" &&
+          activeFlowRef.current !== "faq";
+        if (inActionFlow) {
+          handleFlowExit({ newSession: false, skipTTSInterrupt: true });
+        }
+        if (
+          isVoiceTriggeredForThisRequest ||
+          isActiveVoiceSession(isVoiceTriggeredForThisRequest)
+        ) {
+          void handlePlayTTS(-1, spoken, true);
+        }
+        setIsProcessing(false);
+        return;
+      }
+
       // Set userOptionSelected to true when auto-routing detects a flow
       setUserOptionSelected(true);
 
@@ -2347,6 +2396,7 @@ export function useChatbot({
           userMessage,
           sessionId,
           userId,
+          userRoles: userRolesList,
           isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
           getErpContext,
           appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2379,7 +2429,7 @@ export function useChatbot({
           userMessage,
           sessionId,
           userId,
-          userRoles: roles ? roles.split(",").map((r) => r.trim()).filter(Boolean) : [],
+          userRoles: userRolesList,
           isVoiceTriggered: isVoiceTriggeredForThisRequest,
           isTtsSessionActive: isActiveVoiceSession(isVoiceTriggeredForThisRequest),
           getErpContext,
@@ -2609,6 +2659,7 @@ export function useChatbot({
           userMessage,
           sessionId: sessionId,
           userId,
+          userRoles: userRolesList,
           isVoiceTriggered: attendanceVoiceInitiatedRef.current === true,
           callbacks: getAttendanceFlowCallbacks(),
         });
@@ -2642,6 +2693,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: shouldPlayTTSForLeave,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2658,6 +2710,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2673,6 +2726,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2690,6 +2744,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2705,6 +2760,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2722,6 +2778,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2737,6 +2794,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2752,6 +2810,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2772,6 +2831,8 @@ export function useChatbot({
         const response = await aiAPI.courseProgressChat({
           session_id: sessionId,
           query: userMessage,
+          user_id: userId,
+          user_roles: userRolesList,
           bearer_token: authToken || undefined,
           academic_session,
           branch_token,
@@ -3422,6 +3483,7 @@ export function useChatbot({
         file: pendingImageFile,
         sessionId: sessionId || userId || "",
         userId,
+        userRoles: userRolesList,
         classInfo: classInfoObj,
         isVoiceTriggered: false,
         callbacks: getAttendanceFlowCallbacks(),
@@ -3725,6 +3787,7 @@ export function useChatbot({
           class_info: dataToSave.classInfo,
         })}`, // Send the current attendance data
         user_id: userId, // Pass user_id for context
+        user_roles: userRolesList,
       });
       if (data.status === "success") {
         // Remove the loading message and show success message
@@ -4116,6 +4179,7 @@ export function useChatbot({
         studentData,
         sessionId: saveSessionId || sessionId,
         userId,
+        userRoles: userRolesList,
         getErpContext,
       });
       const answerText = String(result?.data?.answer || "");

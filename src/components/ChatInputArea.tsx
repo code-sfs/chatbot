@@ -30,6 +30,7 @@ export interface ChatInputAreaProps {
   setChatHistory: React.Dispatch<React.SetStateAction<any[]>>;
   sessionId: string;
   userId: string;
+  userRoles?: string[];
   classInfo: ClassInfo | null;
   pendingClassInfo: ClassInfo | null;
   attendanceFlowState: AttendanceState;
@@ -66,6 +67,7 @@ export default function ChatInputArea({
   setChatHistory,
   sessionId,
   userId,
+  userRoles,
   classInfo,
   pendingClassInfo,
   attendanceFlowState,
@@ -206,6 +208,7 @@ export default function ChatInputArea({
                         file,
                         sessionId: sessionId || userId || "",
                         userId,
+                        userRoles,
                         classInfo: existingClassInfo,
                         isVoiceTriggered: false,
                         callbacks: getAttendanceFlowCallbacks(),
@@ -246,6 +249,7 @@ export default function ChatInputArea({
                   file,
                   sessionId,
                   userId,
+                  userRoles,
                   getErpContext,
                   appendBotMessage: (msg) =>
                     setChatHistory((prev) => [...prev, msg]),
@@ -255,6 +259,7 @@ export default function ChatInputArea({
                   file,
                   sessionId,
                   userId,
+                  userRoles,
                   isVoiceTriggered:
                     fullVoiceMode || activeVoiceButtonRef.current !== null,
                   getErpContext,
@@ -268,6 +273,7 @@ export default function ChatInputArea({
                   file,
                   sessionId,
                   userId,
+                  userRoles,
                   getErpContext,
                   isVoiceTriggered: activeVoiceButtonRef.current !== null,
                   appendBotMessage: (msg) =>

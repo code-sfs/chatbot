@@ -26,6 +26,7 @@ export interface ReviewChatParams extends ReviewFlowCallbacks {
   userMessage: string;
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   isVoiceTriggered: boolean;
   getErpContext: () => { academic_session: string; branch_token: string };
 }
@@ -44,6 +45,7 @@ export function shouldExitReviewOnSuccess(answer: string): boolean {
 export async function runReviewChat(params: {
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   query: string;
   isVoiceTriggered: boolean;
   getErpContext: () => { academic_session: string; branch_token: string };
@@ -58,6 +60,7 @@ export async function runReviewChat(params: {
     const data = await aiAPI.reviewChat({
       session_id: params.sessionId || params.userId,
       user_id: params.userId,
+      user_roles: params.userRoles,
       query: params.query,
       bearer_token: authToken || undefined,
       academic_session,
@@ -87,6 +90,7 @@ export async function handleReviewChat(
     userMessage,
     sessionId,
     userId,
+    userRoles,
     isVoiceTriggered,
     getErpContext,
     appendBotMessage,
@@ -101,6 +105,7 @@ export async function handleReviewChat(
     const result = await runReviewChat({
       sessionId,
       userId,
+      userRoles,
       query: userMessage,
       isVoiceTriggered,
       getErpContext,

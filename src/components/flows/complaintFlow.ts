@@ -44,6 +44,7 @@ export interface ComplaintChatParams extends ComplaintFlowCallbacks {
   userMessage: string;
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   isVoiceTriggered: boolean;
   getErpContext: () => { academic_session: string; branch_token: string };
 }
@@ -88,6 +89,7 @@ export function shouldExitComplaintOnSuccess(answer: string): boolean {
 export async function runComplaintChat(params: {
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   query: string;
   isVoiceTriggered: boolean;
   getErpContext: () => { academic_session: string; branch_token: string };
@@ -102,6 +104,7 @@ export async function runComplaintChat(params: {
     const data = await aiAPI.complaintChat({
       session_id: params.sessionId || params.userId,
       user_id: params.userId,
+      user_roles: params.userRoles,
       query: params.query,
       bearer_token: authToken || undefined,
       academic_session,
@@ -131,6 +134,7 @@ export async function handleComplaintChat(
     userMessage,
     sessionId,
     userId,
+    userRoles,
     isVoiceTriggered,
     getErpContext,
     appendBotMessage,
@@ -154,6 +158,7 @@ export async function handleComplaintChat(
     const result = await runComplaintChat({
       sessionId,
       userId,
+      userRoles,
       query: userMessage,
       isVoiceTriggered,
       getErpContext,
