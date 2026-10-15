@@ -56,6 +56,18 @@ export function roleDenialMessage(
   const isStudent = cleaned.some((role) => role === "student");
   const isNurse = cleaned.some((role) => role.includes("nurse"));
 
+  if (isNurse && flow !== "health_card" && flow !== "complaint") {
+    const label =
+      STAFF_LABELS[flow] ||
+      STUDENT_LABELS[flow] ||
+      (flow === "library" || flow === "library_reserve_book"
+        ? "reserve a book"
+        : null);
+    if (label) {
+      return `You are not authorised to ${label}.`;
+    }
+  }
+
   if (HEALTH_CARD_FLOWS.has(flow)) {
     return isNurse ? null : HEALTH_CARD_UNAUTHORIZED_MESSAGE;
   }
