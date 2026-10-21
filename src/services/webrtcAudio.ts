@@ -20,6 +20,8 @@ export interface WebRTCConnectOptions {
   deviceId?: string;
   /** Mic on at connect time (full voice). PTT keeps mic off until enableMic(true). */
   enableMicInitially?: boolean;
+  userId?: string;
+  userRoles?: string;
 }
 
 export class WebRTCAudioService {
@@ -80,7 +82,9 @@ export class WebRTCAudioService {
             }
           },
           onError: (error: RTVIMessage) => {
-            callbacks.onError(new Error(String(error)));
+            const payload = error as { data?: { error?: string; message?: string } };
+            const text = payload?.data?.error || payload?.data?.message || '';
+            callbacks.onError(new Error(text || 'Voice error'));
           },
           onBotStartedSpeaking: () => {
             callbacks.onBotStartedSpeaking?.();
@@ -102,6 +106,8 @@ export class WebRTCAudioService {
           language: selectedLanguage,
           full_voice_mode: fullVoiceMode,
           push_to_talk_mode: pushToTalkMode,
+          user_id: options.userId,
+          user_roles: options.userRoles,
         },
       };
 

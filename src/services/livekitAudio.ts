@@ -29,6 +29,8 @@ export interface VoiceConnectOptions {
   deviceId?: string;
   /** Mic on at connect time (full voice). PTT keeps mic off until enableMic(true). */
   enableMicInitially?: boolean;
+  userId?: string;
+  userRoles?: string;
 }
 
 /** @deprecated Use VoiceAudioCallbacks */
@@ -86,6 +88,8 @@ export class LiveKitAudioService {
         language: selectedLanguage,
         fullVoiceMode,
         pushToTalkMode,
+        userId: options.userId,
+        userRoles: options.userRoles,
       });
 
       const room = new Room({
@@ -148,6 +152,8 @@ export class LiveKitAudioService {
     language: string;
     fullVoiceMode: boolean;
     pushToTalkMode: boolean;
+    userId?: string;
+    userRoles?: string;
   }): Promise<VoiceSessionResponse['data']> {
     const response = await fetch(`${API_BASE_URL}/v1/ai/voice-session`, {
       method: 'POST',
@@ -156,6 +162,8 @@ export class LiveKitAudioService {
         language: opts.language,
         full_voice_mode: opts.fullVoiceMode,
         push_to_talk_mode: opts.pushToTalkMode,
+        user_id: opts.userId,
+        user_roles: opts.userRoles,
       }),
     });
     if (!response.ok) {
@@ -259,6 +267,9 @@ export class LiveKitAudioService {
       case 'error': {
         const msg = String(data.message || 'LiveKit voice error');
         this.callbacks?.onError(new Error(msg));
+        if (msg.includes('daily quota')) {
+          void this.disconnect();
+        }
         break;
       }
       default:

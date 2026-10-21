@@ -617,6 +617,8 @@ interface TextToSpeechRequest {
   uuid_question?: string;
   skip_insight?: boolean;
   voice?: string;
+  user_id?: string;
+  user_roles?: string;
 }
 
 interface ResolveTtsTextRequest {
@@ -907,7 +909,12 @@ export const aiAPI = {
     });
 
     if (!response.ok) {
-      throw new Error("TTS failed");
+      const detail = await response.text().catch(() => "");
+      throw new Error(
+        detail
+          ? `TTS failed (${response.status}): ${detail}`
+          : `TTS failed (${response.status})`,
+      );
     }
 
     return response.body?.getReader() || null;

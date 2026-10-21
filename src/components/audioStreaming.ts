@@ -29,7 +29,9 @@ export const startStreaming = async (
   refs: AudioStreamingRefs,
   callbacks: AudioStreamingCallbacks,
   selectedDeviceId: string,
-  selectedLanguage: string
+  selectedLanguage: string,
+  userId?: string,
+  userRoles?: string,
 ) => {
   const { socketRef, audioContextRef, processorRef, sourceRef, micStreamRef } = refs;
   const { setIsRecording, setInputText } = callbacks;
@@ -55,13 +57,19 @@ export const startStreaming = async (
   socketRef.current = socket;
 
   socket.onopen = () => {
-    socket.send(selectedLanguage);
+    socket.send(
+      JSON.stringify({
+        language: selectedLanguage,
+        user_id: userId,
+        user_roles: userRoles,
+      }),
+    );
 
     processor.onaudioprocess = (e) => {
       const floatSamples = e.inputBuffer.getChannelData(0);
       const int16Samples = convertFloat32ToInt16(floatSamples);
       if (socket.readyState === WebSocket.OPEN) {
-        socket.send(int16Samples.buffer);
+        socket.send(int16Samples.buffer as ArrayBuffer);
       }
     };
 
