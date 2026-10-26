@@ -114,6 +114,9 @@ interface ChatRequest {
   query: string;
   user_id?: string;
   user_roles?: string[];
+  bearer_token?: string;
+  academic_session?: string;
+  branch_token?: string;
 }
 
 interface ChatResponse {
@@ -327,6 +330,27 @@ interface ComplaintChatRequest {
 }
 
 interface ComplaintChatResponse {
+  status: string;
+  data?: {
+    answer?: string;
+    tts_text?: string;
+  };
+  message?: string;
+}
+
+interface RequisitionChatRequest {
+  session_id: string;
+  user_id?: string;
+  query: string;
+  bearer_token?: string;
+  academic_session?: string;
+  branch_token?: string;
+  voice_mode?: boolean;
+  tts?: boolean;
+  user_roles?: string[];
+}
+
+interface RequisitionChatResponse {
   status: string;
   data?: {
     answer?: string;
@@ -799,10 +823,23 @@ export const aiAPI = {
 
   // Chat endpoint (used for multiple purposes)
   chat: async (request: ChatRequest): Promise<ChatResponse> => {
+    const bearer_token =
+      request.bearer_token || localStorage.getItem("token") || undefined;
+    const academic_session =
+      request.academic_session ||
+      localStorage.getItem("academic_session") ||
+      undefined;
+    const branch_token =
+      request.branch_token || localStorage.getItem("branch_token") || undefined;
     const response = await fetch(`${API_BASE_URL}/v1/ai/chat`, {
       method: "POST",
-      headers: getDefaultHeaders(),
-      body: JSON.stringify(request),
+      headers: getDefaultHeaders(true),
+      body: JSON.stringify({
+        ...request,
+        bearer_token,
+        academic_session,
+        branch_token,
+      }),
     });
 
     return await parseJsonResponse<ChatResponse>(response);
@@ -1023,6 +1060,19 @@ export const aiAPI = {
     });
 
     return await parseJsonResponse<ComplaintChatResponse>(response);
+  },
+
+  // Requisition chat
+  requisitionChat: async (
+    request: RequisitionChatRequest,
+  ): Promise<RequisitionChatResponse> => {
+    const response = await fetch(`${API_BASE_URL}/v1/ai/requisition-chat`, {
+      method: "POST",
+      headers: getDefaultHeaders(),
+      body: JSON.stringify(request),
+    });
+
+    return await parseJsonResponse<RequisitionChatResponse>(response);
   },
 
   // Submission chat

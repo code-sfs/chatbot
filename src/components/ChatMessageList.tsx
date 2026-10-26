@@ -183,7 +183,6 @@ export default function ChatMessageList(props: ChatMessageListProps) {
     chatBoxRef,
     chatHistory,
     activeFlow,
-    attendanceStep,
     isProcessing,
     ttsLoading,
     editingMessageIndex,
@@ -257,78 +256,6 @@ export default function ChatMessageList(props: ChatMessageListProps) {
 
   return (
     <div className="chatbot-chatbox" ref={chatBoxRef}>
-      {/* Attendance Flow Step Indicator - Mobile-friendly */}
-      {(activeFlow === "attendance" || activeFlow === "voice_attendance") && (
-        <div className="attendance-step-indicator bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4 mb-3 sm:mb-4 overflow-x-auto">
-          <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-wrap sm:flex-nowrap">
-            <div
-              className={`flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${
-                attendanceStep === "class_info"
-                  ? "text-blue-600 font-semibold"
-                  : "text-gray-600 font-normal"
-              }`}
-            >
-              <span
-                className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0 ${
-                  attendanceStep === "class_info"
-                    ? "bg-blue-600 text-white"
-                    : "bg-blue-100 text-gray-600"
-                }`}
-              >
-                {attendanceStep === "class_info" ? "1" : "✓"}
-              </span>
-              <span className="text-xs sm:text-sm truncate">
-                {activeFlow === "voice_attendance"
-                  ? "Class (Voice)"
-                  : "Class Info"}
-              </span>
-            </div>
-            <div className="w-0.5 h-4 sm:h-5 bg-blue-200 flex-shrink-0 hidden sm:block"></div>
-            <div
-              className={`flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${
-                attendanceStep === "student_details"
-                  ? "text-blue-600 font-semibold"
-                  : "text-gray-600 font-normal"
-              }`}
-            >
-              <span
-                className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0 ${
-                  attendanceStep === "student_details"
-                    ? "bg-blue-600 text-white"
-                    : "bg-blue-100 text-gray-600"
-                }`}
-              >
-                {attendanceStep === "completed" ? "✓" : "2"}
-              </span>
-              <span className="text-xs sm:text-sm truncate">
-                {activeFlow === "voice_attendance"
-                  ? "Students (Voice)"
-                  : "Students"}
-              </span>
-            </div>
-            <div className="w-0.5 h-4 sm:h-5 bg-blue-200 flex-shrink-0 hidden sm:block"></div>
-            <div
-              className={`flex items-center gap-1.5 sm:gap-2 flex-shrink-0 ${
-                attendanceStep === "completed"
-                  ? "text-green-600 font-semibold"
-                  : "text-gray-600 font-normal"
-              }`}
-            >
-              <span
-                className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center text-xs sm:text-sm font-semibold flex-shrink-0 ${
-                  attendanceStep === "completed"
-                    ? "bg-green-600 text-white"
-                    : "bg-blue-100 text-gray-600"
-                }`}
-              >
-                {attendanceStep === "completed" ? "✓" : "3"}
-              </span>
-              <span className="text-xs sm:text-sm truncate">Complete</span>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* Removed separate editable component - editing is now inline in the table */}
 
       <div className="chatbot-messages">
         {showWelcomePanel && onSelectPrompt ? (
@@ -1808,6 +1735,36 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                               ).length
                                             }
                                           </div>
+                                          <div className="text-amber-600">
+                                            <strong>Leave:</strong>{" "}
+                                            {
+                                              dataToUse.filter(
+                                                (item: AttendanceRecord) =>
+                                                  item.attendance_status ===
+                                                  "Leave",
+                                              ).length
+                                            }
+                                          </div>
+                                          <div className="text-gray-500">
+                                            <strong>Holiday:</strong>{" "}
+                                            {
+                                              dataToUse.filter(
+                                                (item: AttendanceRecord) =>
+                                                  item.attendance_status ===
+                                                  "Holiday",
+                                              ).length
+                                            }
+                                          </div>
+                                          <div className="text-blue-500">
+                                            <strong>Prep Leave:</strong>{" "}
+                                            {
+                                              dataToUse.filter(
+                                                (item: AttendanceRecord) =>
+                                                  item.attendance_status ===
+                                                  "Prep Leave",
+                                              ).length
+                                            }
+                                          </div>
                                         </>
                                       );
                                     })()}
@@ -1932,6 +1889,15 @@ export default function ChatMessageList(props: ChatMessageListProps) {
                                                         </option>
                                                         <option value="Absent">
                                                           Absent
+                                                        </option>
+                                                        <option value="Leave">
+                                                          Leave
+                                                        </option>
+                                                        <option value="Holiday">
+                                                          Holiday
+                                                        </option>
+                                                        <option value="Prep Leave">
+                                                          Prep Leave
                                                         </option>
                                                       </select>
                                                     ) : (
