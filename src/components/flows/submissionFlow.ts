@@ -27,6 +27,7 @@ export interface SubmissionChatParams extends SubmissionFlowCallbacks {
   userMessage: string;
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   isVoiceTriggered: boolean;
   getErpContext: () => { academic_session: string; branch_token: string };
 }
@@ -35,6 +36,7 @@ export interface SubmissionFileUploadParams {
   file: File;
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   getErpContext: () => { academic_session: string; branch_token: string };
   isVoiceTriggered?: boolean;
   appendBotMessage: (msg: SubmissionBotMessage) => void;
@@ -70,6 +72,7 @@ export function shouldExitSubmissionOnSuccess(answer: string): boolean {
 export async function runSubmissionChat(params: {
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   query: string;
   isVoiceTriggered: boolean;
   getErpContext: () => { academic_session: string; branch_token: string };
@@ -84,6 +87,7 @@ export async function runSubmissionChat(params: {
     const data = await aiAPI.submissionChat({
       session_id: params.sessionId || params.userId,
       user_id: params.userId,
+      user_roles: params.userRoles,
       query: params.query,
       bearer_token: authToken || undefined,
       academic_session,
@@ -113,6 +117,7 @@ export async function handleSubmissionChat(
     userMessage,
     sessionId,
     userId,
+    userRoles,
     isVoiceTriggered,
     getErpContext,
     appendBotMessage,
@@ -127,6 +132,7 @@ export async function handleSubmissionChat(
     const result = await runSubmissionChat({
       sessionId,
       userId,
+      userRoles,
       query: userMessage,
       isVoiceTriggered,
       getErpContext,
@@ -213,6 +219,7 @@ export async function handleSubmissionFileUpload(
     file,
     sessionId,
     userId,
+    userRoles,
     getErpContext,
     isVoiceTriggered,
     appendBotMessage,
@@ -260,6 +267,7 @@ export async function handleSubmissionFileUpload(
         const chatResult = await runSubmissionChat({
           sessionId,
           userId,
+          userRoles,
           query: fileMessage,
           isVoiceTriggered: false,
           getErpContext,

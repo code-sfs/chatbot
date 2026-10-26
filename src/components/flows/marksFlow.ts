@@ -4,6 +4,7 @@ interface MarksFlowParams {
   userMessage: string;
   sessionId: string;
   userId: string;
+  userRoles?: string[];
   isVoiceTriggered: boolean;
   getErpContext: () => {
     academic_session: string;
@@ -22,6 +23,7 @@ export async function runMarksChat(params: {
   userMessage: string;
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   isVoiceTriggered: boolean;
   getErpContext: () => { academic_session: string; branch_token: string };
 }) {
@@ -31,6 +33,7 @@ export async function runMarksChat(params: {
     const data = await aiAPI.marksChat({
       session_id: params.sessionId || params.userId,
       user_id: params.userId,
+      user_roles: params.userRoles,
       query: params.userMessage,
       bearer_token: authToken || undefined,
       academic_session,
@@ -59,9 +62,10 @@ export async function sendColumnSave(params: {
   }>;
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   getErpContext: () => any;
 }) {
-  const { columnTitle, studentData, sessionId, userId, getErpContext } = params;
+  const { columnTitle, studentData, sessionId, userId, userRoles, getErpContext } = params;
   const effectiveSessionId = sessionId || userId;
 
   console.log("📊 Marks Column Save - Session Debug:", {
@@ -79,6 +83,7 @@ export async function sendColumnSave(params: {
     userMessage: query,
     sessionId: effectiveSessionId,
     userId,
+    userRoles,
     isVoiceTriggered: false,
     getErpContext,
   });
@@ -89,6 +94,7 @@ export async function handleMarksChat(params: MarksFlowParams) {
     userMessage,
     sessionId,
     userId,
+    userRoles,
     isVoiceTriggered,
     getErpContext,
     appendBotMessage,
@@ -104,6 +110,7 @@ export async function handleMarksChat(params: MarksFlowParams) {
       userMessage,
       sessionId,
       userId,
+      userRoles,
       isVoiceTriggered,
       getErpContext,
     });

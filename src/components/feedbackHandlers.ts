@@ -5,11 +5,17 @@ import type { ChatMessage } from "./types";
 export const handlePlayTTS = async (
   idx: number,
   text: string,
-  setTtsLoading: (idx: number | null) => void
+  setTtsLoading: (idx: number | null) => void,
+  userId?: string,
+  userRoles?: string,
 ) => {
   setTtsLoading(idx);
   try {
-    const reader = await aiAPI.textToSpeech({ text });
+    const reader = await aiAPI.textToSpeech({
+      text,
+      user_id: userId,
+      user_roles: userRoles,
+    });
     if (!reader) throw new Error("No stream");
     const audioChunks: Uint8Array[] = [];
     let done = false;

@@ -47,6 +47,7 @@ export interface LeaveChatParams extends LeaveFlowCallbacks {
   userMessage: string;
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   isVoiceTriggered: boolean;
   getErpContext: () => { academic_session: string; branch_token: string };
 }
@@ -468,6 +469,7 @@ export function generateLeaveTTSSummary(answer: string): string {
 export async function runLeaveChat(params: {
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   query: string;
   getErpContext: () => { academic_session: string; branch_token: string };
 }): Promise<{
@@ -482,6 +484,7 @@ export async function runLeaveChat(params: {
     const data = await aiAPI.leaveChat({
       session_id: params.sessionId || params.userId,
       user_id: params.userId,
+      user_roles: params.userRoles,
       query: params.query,
       bearer_token: authToken || undefined,
       academic_session,
@@ -519,6 +522,7 @@ export async function handleLeaveChat(params: LeaveChatParams): Promise<void> {
     userMessage,
     sessionId,
     userId,
+    userRoles,
     isVoiceTriggered,
     getErpContext,
     appendBotMessage,
@@ -540,6 +544,7 @@ export async function handleLeaveChat(params: LeaveChatParams): Promise<void> {
     const result = await runLeaveChat({
       sessionId,
       userId,
+      userRoles,
       query: userMessage,
       getErpContext,
     });

@@ -113,6 +113,7 @@ interface ChatRequest {
   session_id: string;
   query: string;
   user_id?: string;
+  user_roles?: string[];
 }
 
 interface ChatResponse {
@@ -197,6 +198,7 @@ interface LeaveChatRequest {
   bearer_token?: string; // Optional: Bearer token for ERP API
   academic_session?: string; // Optional: Academic session
   branch_token?: string; // Optional: Branch token
+  user_roles?: string[];
 }
 
 interface LeaveChatResponse {
@@ -230,6 +232,7 @@ interface AssignmentChatRequest {
   voice_mode?: boolean; // Optional: enable TTS for voice / full-voice mode
   tts?: boolean; // Optional: alternative to voice_mode
   tts_voice?: string; // Optional: TTS voice to use
+  user_roles?: string[];
 }
 
 interface AssignmentChatResponse {
@@ -259,6 +262,7 @@ interface MessageChatRequest {
   branch_token?: string;
   voice_mode?: boolean;
   tts?: boolean;
+  user_roles?: string[];
 }
 
 interface MessageChatResponse {
@@ -291,6 +295,7 @@ interface LibraryChatRequest {
   branch_token?: string;
   voice_mode?: boolean;
   tts?: boolean;
+  user_roles?: string[];
 }
 
 interface LibraryChatResponse {
@@ -318,6 +323,7 @@ interface ComplaintChatRequest {
   voice_mode?: boolean;
   tts?: boolean;
   tts_voice?: string;
+  user_roles?: string[];
 }
 
 interface ComplaintChatResponse {
@@ -339,6 +345,7 @@ interface SubmissionChatRequest {
   voice_mode?: boolean; // Optional: enable TTS for voice / full-voice mode
   tts?: boolean; // Optional: alternative to voice_mode
   tts_voice?: string; // Optional: TTS voice to use
+  user_roles?: string[];
 }
 
 interface SubmissionChatResponse {
@@ -360,6 +367,7 @@ interface ReviewChatRequest {
   voice_mode?: boolean; // Optional: enable TTS for voice / full-voice mode
   tts?: boolean; // Optional: alternative to voice_mode
   tts_voice?: string; // Optional: TTS voice to use
+  user_roles?: string[];
 }
 
 interface TeacherDiaryChatRequest {
@@ -372,6 +380,7 @@ interface TeacherDiaryChatRequest {
   voice_mode?: boolean; // Optional: enable TTS for voice / full-voice mode
   tts?: boolean; // Optional: alternative to voice_mode
   tts_voice?: string; // Optional: TTS voice to use
+  user_roles?: string[];
 }
 
 export interface MarksChatRequest {
@@ -383,6 +392,7 @@ export interface MarksChatRequest {
   branch_token: string;
   voice_mode?: boolean;
   tts?: boolean;
+  user_roles?: string[];
 }
 
 export interface MarksChatResponse {
@@ -449,6 +459,8 @@ interface TeacherDiaryChatResponse {
 interface CourseProgressChatRequest {
   session_id: string;
   query: string;
+  user_id?: string;
+  user_roles?: string[];
   bearer_token?: string;
   academic_session?: string;
   branch_token?: string;
@@ -605,6 +617,8 @@ interface TextToSpeechRequest {
   uuid_question?: string;
   skip_insight?: boolean;
   voice?: string;
+  user_id?: string;
+  user_roles?: string;
 }
 
 interface ResolveTtsTextRequest {
@@ -914,7 +928,12 @@ export const aiAPI = {
     });
 
     if (!response.ok) {
-      throw new Error("TTS failed");
+      const detail = await response.text().catch(() => "");
+      throw new Error(
+        detail
+          ? `TTS failed (${response.status}): ${detail}`
+          : `TTS failed (${response.status})`,
+      );
     }
 
     return response.body?.getReader() || null;

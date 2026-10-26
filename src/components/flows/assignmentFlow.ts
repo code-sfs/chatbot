@@ -27,6 +27,7 @@ export interface AssignmentChatParams extends AssignmentFlowCallbacks {
   userMessage: string;
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   isVoiceTriggered: boolean;
   getErpContext: () => { academic_session: string; branch_token: string };
 }
@@ -35,6 +36,7 @@ export interface AssignmentFileUploadParams {
   file: File;
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   getErpContext: () => { academic_session: string; branch_token: string };
   appendBotMessage: (msg: AssignmentBotMessage) => void;
 }
@@ -69,6 +71,7 @@ export function shouldExitAssignmentOnSuccess(answer: string): boolean {
 export async function runAssignmentChat(params: {
   sessionId: string | null;
   userId: string;
+  userRoles?: string[];
   query: string;
   isVoiceTriggered: boolean;
   getErpContext: () => { academic_session: string; branch_token: string };
@@ -83,6 +86,7 @@ export async function runAssignmentChat(params: {
     const data = await aiAPI.assignmentChat({
       session_id: params.sessionId || params.userId,
       user_id: params.userId,
+      user_roles: params.userRoles,
       query: params.query,
       bearer_token: authToken || undefined,
       academic_session,
@@ -112,6 +116,7 @@ export async function handleAssignmentChat(
     userMessage,
     sessionId,
     userId,
+    userRoles,
     isVoiceTriggered,
     getErpContext,
     appendBotMessage,
@@ -126,6 +131,7 @@ export async function handleAssignmentChat(
     const result = await runAssignmentChat({
       sessionId,
       userId,
+      userRoles,
       query: userMessage,
       isVoiceTriggered,
       getErpContext,
@@ -203,7 +209,7 @@ export async function handleAssignmentChat(
 export async function handleAssignmentFileUpload(
   params: AssignmentFileUploadParams,
 ): Promise<void> {
-  const { file, sessionId, userId, getErpContext, appendBotMessage } = params;
+  const { file, sessionId, userId, userRoles, getErpContext, appendBotMessage } = params;
 
   try {
     const result = await aiAPI.uploadAssignmentFile(file, sessionId || userId);
@@ -235,6 +241,7 @@ export async function handleAssignmentFileUpload(
         const chatResult = await runAssignmentChat({
           sessionId,
           userId,
+          userRoles,
           query: fileMessage,
           isVoiceTriggered: false,
           getErpContext,

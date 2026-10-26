@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { TabType, FlowType } from "../types";
 import { isExitResponse, generateQueryTTSSummary } from "../utils/chatbotUtils";
+import { roleDenialMessage } from "../../utils/actionFlowAccess";
 import {
   mergePttFinalSegment,
   buildPttLiveDisplay,
@@ -429,6 +430,11 @@ export function useChatbot({
   // turns) — those would otherwise re-fill the input box and interrupt the
   // reply's TTS that already started playing.
   const pttTurnActiveRef = useRef(false);
+  // Listening hit the daily cap. Drop this utterance so it is not sent to chat.
+  const voiceQuotaBlockedRef = useRef(false);
+  const fullVoiceAutoSubmitTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const [isVoiceActive, setIsVoiceActive] = useState<boolean>(false); // Voice activity indicator
   const currentTTSAudioRef = useRef<HTMLAudioElement | null>(null); // Track current TTS audio for interruption
   // Single reusable <audio> element for REST TTS. iOS/Android WebViews only allow
@@ -472,6 +478,7 @@ export function useChatbot({
     buildPttSubmitText(finalTextRef.current, lastInterimTextRef.current);
 
   const beginPttCapture = () => {
+    voiceQuotaBlockedRef.current = false;
     finalTextRef.current = "";
     lastInterimTextRef.current = "";
     pttDisplayTextRef.current = "";
@@ -515,6 +522,7 @@ export function useChatbot({
    * window. Returns true only when the text was actually submitted.
    */
   const submitVoiceInput = async (rawInput: string): Promise<boolean> => {
+    if (voiceQuotaBlockedRef.current) return false;
     const finalInput = rawInput.trim();
     if (!finalInput) return false;
 
@@ -904,6 +912,7 @@ export function useChatbot({
             return (text: string, isFinal: boolean) => {
               const trimmed = normalizeSttText(text);
               if (!trimmed) return;
+              if (voiceQuotaBlockedRef.current) return;
               // Drop any audio captured while the mic track is being primed during
               // pre-warm (before the user has pressed PTT).
               if (micWarmingRef.current) return;
@@ -963,14 +972,16 @@ export function useChatbot({
               if (useDictationDebounce) {
                 setLastVoiceInputTime(Date.now());
 
-                if (fullVoiceAutoSubmitTimer) {
-                  clearTimeout(fullVoiceAutoSubmitTimer);
+                if (fullVoiceAutoSubmitTimerRef.current) {
+                  clearTimeout(fullVoiceAutoSubmitTimerRef.current);
                 }
 
                 const currentText = isFinal
                   ? finalTextRef.current
                   : finalTextRef.current + " " + trimmed;
                 const timer = setTimeout(async () => {
+                  fullVoiceAutoSubmitTimerRef.current = null;
+                  if (voiceQuotaBlockedRef.current) return;
                   const finalInput = currentText.trim();
                   if (!finalInput || finalInput === lastSubmittedInput) return;
                   lastSubmittedInput = finalInput;
@@ -978,13 +989,44 @@ export function useChatbot({
                   setInputText(finalInput);
                   await submitVoiceInput(finalInput);
                 }, FULL_VOICE_DICTATION_DEBOUNCE_MS);
+                fullVoiceAutoSubmitTimerRef.current = timer;
                 setFullVoiceAutoSubmitTimer(timer);
               }
             };
           })(),
           onError: (error: Error) => {
             console.error("WebRTC error:", error);
-            if (!prewarmOnly) {
+            const detail = error.message || "";
+            const quota =
+              detail.includes("daily quota") || detail.includes("(429)");
+            if (quota) {
+              voiceQuotaBlockedRef.current = true;
+              finalTextRef.current = "";
+              lastInterimTextRef.current = "";
+              pttDisplayTextRef.current = "";
+              setInputText("");
+              if (turnCompleteTimerRef.current) {
+                clearTimeout(turnCompleteTimerRef.current);
+                turnCompleteTimerRef.current = null;
+              }
+              if (fullVoiceAutoSubmitTimerRef.current) {
+                clearTimeout(fullVoiceAutoSubmitTimerRef.current);
+                fullVoiceAutoSubmitTimerRef.current = null;
+                setFullVoiceAutoSubmitTimer(null);
+              }
+              clearPipelineTtsFallback();
+              if (webrtcServiceRef.current?.getIsConnected()) {
+                setChatHistory((prev) => [
+                  ...prev,
+                  {
+                    type: "bot",
+                    text: "You have reached your daily quota limit today. Please try again after 24 hours",
+                  },
+                ]);
+                void webrtcServiceRef.current?.disconnect();
+              }
+            }
+            if (!prewarmOnly || quota) {
               setIsRecording(false);
               endPttCapture();
               pttTurnActiveRef.current = false;
@@ -993,6 +1035,9 @@ export function useChatbot({
             setIsVoiceActive(false);
           },
           onConnected: () => {
+            if (!prewarmOnly) {
+              voiceQuotaBlockedRef.current = false;
+            }
             if (prewarmOnly) {
               voicePipelineActiveRef.current = true;
               setIsFullVoiceConnecting(false);
@@ -1030,6 +1075,7 @@ export function useChatbot({
               clearTimeout(turnCompleteTimerRef.current);
             turnCompleteTimerRef.current = setTimeout(async () => {
               turnCompleteTimerRef.current = null;
+              if (voiceQuotaBlockedRef.current) return;
               const finalInput = finalTextRef.current.trim();
               if (!finalInput) return;
               lastInterimTextRef.current = "";
@@ -1079,6 +1125,8 @@ export function useChatbot({
           // Acquire the mic track during pre-warm too, so the first PTT press is an
           // instant track un-mute instead of a (slow) first-time getUserMedia.
           enableMicInitially: useFullVoice || prewarmOnly,
+          userId,
+          userRoles: roles,
         },
       );
 
@@ -1091,6 +1139,19 @@ export function useChatbot({
       }
     } catch (error) {
       console.error("Failed to start WebRTC streaming:", error);
+      const detail = error instanceof Error ? error.message : String(error);
+      if (
+        !prewarmOnly &&
+        (detail.includes("(429)") || detail.includes("daily quota"))
+      ) {
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            type: "bot",
+            text: "You have reached your daily quota limit today. Please try again after 24 hours",
+          },
+        ]);
+      }
       if (!prewarmOnly) {
         setIsRecording(false);
       }
@@ -1138,7 +1199,11 @@ export function useChatbot({
       clearTimeout(turnCompleteTimerRef.current);
       turnCompleteTimerRef.current = null;
     }
-    if (fullVoiceAutoSubmitTimer) {
+    if (fullVoiceAutoSubmitTimerRef.current) {
+      clearTimeout(fullVoiceAutoSubmitTimerRef.current);
+      fullVoiceAutoSubmitTimerRef.current = null;
+      setFullVoiceAutoSubmitTimer(null);
+    } else if (fullVoiceAutoSubmitTimer) {
       clearTimeout(fullVoiceAutoSubmitTimer);
       setFullVoiceAutoSubmitTimer(null);
     }
@@ -1197,7 +1262,7 @@ export function useChatbot({
       finalTextRef.current = "";
       pttDisplayTextRef.current = "";
 
-      if (skipSubmit) return;
+      if (skipSubmit || voiceQuotaBlockedRef.current) return;
       if (!flushedInput) {
         if (wasPttSession) {
           void handlePlayTTS(
@@ -1233,7 +1298,7 @@ export function useChatbot({
       willSubmit: !skipSubmit && !!finalInput,
     });
 
-    if (skipSubmit) return;
+    if (skipSubmit || voiceQuotaBlockedRef.current) return;
     if (!finalInput) {
       if (wasPttSession) {
         void handlePlayTTS(-1, "I didn't catch that. Please try again.");
@@ -1422,6 +1487,10 @@ export function useChatbot({
     return hasQueryVerb || (hasDataNoun && n.includes("?"));
   };
 
+  const userRolesList = roles
+    ? roles.split(",").map((role) => role.trim()).filter(Boolean)
+    : [];
+
   /**
    * Classify user query to determine appropriate flow
    */
@@ -1433,6 +1502,8 @@ export function useChatbot({
     entities: any;
     validation_status?: string;
     clarification_question?: string;
+    message?: string;
+    tts_text?: string;
   }> => {
     try {
       const response = await fetch(`${API_BASE_URL}/v1/ai/classify-query`, { //fetch(...) ->Browser sends HTTP request to backend
@@ -1441,7 +1512,7 @@ export function useChatbot({
         body: JSON.stringify({ 
           query: message,
           user_id: userId,
-          user_roles: roles ? roles.split(",").map(r => r.trim()) : [],
+          user_roles: userRolesList,
         }),
       });
 
@@ -1454,6 +1525,8 @@ export function useChatbot({
           entities,
           validation_status,
           clarification_question,
+          message: responseMessage,
+          tts_text,
         } = data.data;
 
         console.log("[Routing] Query classification:", {
@@ -1469,6 +1542,8 @@ export function useChatbot({
           entities,
           validation_status,
           clarification_question,
+          message: responseMessage,
+          tts_text,
         };
       }
 
@@ -1569,6 +1644,8 @@ export function useChatbot({
       entities: any;
       validation_status?: string;
       clarification_question?: string;
+      message?: string;
+      tts_text?: string;
     } | null = null;
     let disambiguationResolvedFlow: FlowType | null = null;
 
@@ -2089,6 +2166,42 @@ export function useChatbot({
         }
       }
 
+      const backendDenied =
+        classificationResult?.validation_status === "role_unauthorized" ||
+        classificationResult?.flow === "unauthorized";
+      const denialMessage = backendDenied
+        ? classificationResult?.message ||
+          roleDenialMessage(
+            classificationResult?.flow || targetFlow,
+            userRolesList,
+          )
+        : roleDenialMessage(targetFlow, userRolesList);
+      if (denialMessage && !flowToExitOnCommand) {
+        const spoken =
+          (backendDenied && classificationResult?.tts_text) ||
+          denialMessage.replace(/^🚫\s*/, "");
+        setChatHistory((prev) => [
+          ...prev,
+          { type: "bot", text: denialMessage },
+        ]);
+        setDetectedFlow(null);
+        const inActionFlow =
+          activeFlowRef.current !== "none" &&
+          activeFlowRef.current !== "query" &&
+          activeFlowRef.current !== "faq";
+        if (inActionFlow) {
+          handleFlowExit({ newSession: false, skipTTSInterrupt: true });
+        }
+        if (
+          isVoiceTriggeredForThisRequest ||
+          isActiveVoiceSession(isVoiceTriggeredForThisRequest)
+        ) {
+          void handlePlayTTS(-1, spoken, true);
+        }
+        setIsProcessing(false);
+        return;
+      }
+
       // Set userOptionSelected to true when auto-routing detects a flow
       setUserOptionSelected(true);
 
@@ -2383,6 +2496,7 @@ export function useChatbot({
           userMessage,
           sessionId,
           userId,
+          userRoles: userRolesList,
           isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
           getErpContext,
           appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2415,7 +2529,7 @@ export function useChatbot({
           userMessage,
           sessionId,
           userId,
-          userRoles: roles ? roles.split(",").map((r) => r.trim()).filter(Boolean) : [],
+          userRoles: userRolesList,
           isVoiceTriggered: isVoiceTriggeredForThisRequest,
           isTtsSessionActive: isActiveVoiceSession(isVoiceTriggeredForThisRequest),
           getErpContext,
@@ -2659,6 +2773,7 @@ export function useChatbot({
           userMessage,
           sessionId: sessionId,
           userId,
+          userRoles: userRolesList,
           isVoiceTriggered: attendanceVoiceInitiatedRef.current === true,
           callbacks: getAttendanceFlowCallbacks(),
         });
@@ -2692,6 +2807,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: shouldPlayTTSForLeave,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2708,6 +2824,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2723,6 +2840,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2740,6 +2858,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2755,6 +2874,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2772,6 +2892,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2787,6 +2908,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2802,6 +2924,7 @@ export function useChatbot({
         userMessage,
         sessionId,
         userId,
+        userRoles: userRolesList,
         isVoiceTriggered: isVoiceTriggeredRequestRef.current === true,
         getErpContext,
         appendBotMessage: (msg) => setChatHistory((prev) => [...prev, msg]),
@@ -2822,6 +2945,8 @@ export function useChatbot({
         const response = await aiAPI.courseProgressChat({
           session_id: sessionId,
           query: userMessage,
+          user_id: userId,
+          user_roles: userRolesList,
           bearer_token: authToken || undefined,
           academic_session,
           branch_token,
@@ -3145,6 +3270,8 @@ export function useChatbot({
         uuid_question: uuidForTts,
         skip_insight: skipInsight || !isQuery,
         voice: resolveTtsVoice(selectedLanguage),
+        user_id: userId,
+        user_roles: roles,
       });
 
       if (ttsRequestIdRef.current !== thisRequestId) {
@@ -3223,6 +3350,16 @@ export function useChatbot({
       await audio.play();
     } catch (err) {
       console.error("TTS generation error:", err);
+      const detail = err instanceof Error ? err.message : String(err);
+      if (detail.includes("daily quota") || detail.includes("(429)")) {
+        setChatHistory((prev) => [
+          ...prev,
+          {
+            type: "bot",
+            text: "You have reached your daily quota limit today. Please try again after 24 hours",
+          },
+        ]);
+      }
       if (audioUrl) URL.revokeObjectURL(audioUrl);
       currentTTSAudioRef.current = null;
       setTtsLoading(null);
@@ -3315,7 +3452,8 @@ export function useChatbot({
       pipelineTtsFallbackTimerRef.current = setTimeout(() => {
         if (
           pipelineTtsStartedRef.current ||
-          ttsRequestIdRef.current !== thisRequestId
+          ttsRequestIdRef.current !== thisRequestId ||
+          voiceQuotaBlockedRef.current
         ) {
           return;
         }
@@ -3472,6 +3610,7 @@ export function useChatbot({
         file: pendingImageFile,
         sessionId: sessionId || userId || "",
         userId,
+        userRoles: userRolesList,
         classInfo: classInfoObj,
         isVoiceTriggered: false,
         callbacks: getAttendanceFlowCallbacks(),
@@ -3775,6 +3914,7 @@ export function useChatbot({
           class_info: dataToSave.classInfo,
         })}`, // Send the current attendance data
         user_id: userId, // Pass user_id for context
+        user_roles: userRolesList,
       });
       if (data.status === "success") {
         // Remove the loading message and show success message
@@ -4166,6 +4306,7 @@ export function useChatbot({
         studentData,
         sessionId: saveSessionId || sessionId,
         userId,
+        userRoles: userRolesList,
         getErpContext,
       });
       const answerText = String(result?.data?.answer || "");
