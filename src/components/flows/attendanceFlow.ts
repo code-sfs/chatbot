@@ -26,7 +26,7 @@ export interface ClassInfo {
 
 export interface AttendanceRecord {
   student_name: string;
-  attendance_status: "Present" | "Absent";
+  attendance_status: "Present" | "Absent" | "Leave" | "Holiday" | "Prep Leave";
 }
 
 export interface AttendanceState {
@@ -85,6 +85,7 @@ export interface AttendanceChatParams {
   userId: string;
   userRoles?: string[];
   isVoiceTriggered: boolean;
+  getErpContext: () => { academic_session: string; branch_token: string };
   callbacks: AttendanceFlowCallbacks;
 }
 
@@ -165,9 +166,24 @@ export function generateAttendanceTTSSummary(
     const presentCount = attendanceData.filter(
       (s) => s.attendance_status?.toLowerCase() === "present"
     ).length;
-    const total = attendanceData.length;
-    const absentCount = total - presentCount;
-    return `Attendance summary ready. ${total} students total. ${presentCount} present, ${absentCount} absent. You can say edit attendance to change any student, approve to save, or reject to start over.`;
+    const absentCount = attendanceData.filter(
+      (s) => s.attendance_status?.toLowerCase() === "absent"
+    ).length;
+    const leaveCount = attendanceData.filter(
+      (s) => s.attendance_status === "Leave"
+    ).length;
+    const holidayCount = attendanceData.filter(
+      (s) => s.attendance_status === "Holiday"
+    ).length;
+    const prepLeaveCount = attendanceData.filter(
+      (s) => s.attendance_status === "Prep Leave"
+    ).length;
+    const extra = [
+      leaveCount ? `${leaveCount} on leave` : "",
+      holidayCount ? `${holidayCount} holiday` : "",
+      prepLeaveCount ? `${prepLeaveCount} prep leave` : "",
+    ].filter(Boolean).join(", ");
+    return `Attendance summary ready. ${attendanceData.length} students total. ${presentCount} present, ${absentCount} absent${extra ? `, ${extra}` : ""}. You can say edit attendance to change any student, approve to save, or reject to start over.`;
   }
 
   // Success message (backend: "Attendance saved.")
@@ -322,9 +338,11 @@ export function createReviewButtons(
 export async function handleAttendanceChat(
   params: AttendanceChatParams
 ): Promise<void> {
-  const { userMessage, sessionId, userId, userRoles, isVoiceTriggered, callbacks } = params;
+  const { userMessage, sessionId, userId, userRoles, isVoiceTriggered, getErpContext, callbacks } = params;
   const state = callbacks.getAttendanceState();
   const msg = userMessage.trim();
+  const authToken = localStorage.getItem("token");
+  const { academic_session, branch_token } = getErpContext();
 
   try {
     callbacks.setProcessing(true);
@@ -333,6 +351,9 @@ export async function handleAttendanceChat(
       query: msg,
       user_id: userId,
       user_roles: userRoles,
+      bearer_token: authToken || undefined,
+      academic_session,
+      branch_token,
     });
 
     if (response.status === "success" && response.data) {
@@ -480,6 +501,9 @@ interface ApprovalParams {
 
 async function handleAttendanceApproval(params: ApprovalParams): Promise<void> {
   const { sessionId, userId, userRoles, attendanceData, classInfo, isVoiceTriggered, callbacks } = params;
+  const authToken = localStorage.getItem("token");
+  const academic_session = localStorage.getItem("academic_session") || "2025-26";
+  const branch_token = localStorage.getItem("branch_token") || "dpsindp";
 
   if (!attendanceData || attendanceData.length === 0) {
     callbacks.appendBotMessage({
@@ -505,6 +529,9 @@ async function handleAttendanceApproval(params: ApprovalParams): Promise<void> {
       })}`,
       user_id: userId,
       user_roles: userRoles,
+      bearer_token: authToken || undefined,
+      academic_session,
+      branch_token,
     });
 
     if (response.status === "success") {

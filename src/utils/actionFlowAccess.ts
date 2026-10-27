@@ -30,9 +30,22 @@ const STUDENT_LABELS: Record<string, string> = {
 };
 
 const HEALTH_CARD_FLOWS = new Set(["health_card"]);
+const REQUISITION_FLOWS = new Set(["requisition", "requisition_request"]);
+
+function isHmRole(roles: string[]): boolean {
+  return roles.some(
+    (role) =>
+      role === "hm" ||
+      /\bhm\b/.test(role) ||
+      role.includes("head mistress") ||
+      role.includes("headmistress") ||
+      role.includes("head master") ||
+      role.includes("headmaster"),
+  );
+}
 
 export const HEALTH_CARD_UNAUTHORIZED_MESSAGE =
-  "🚫 You are not authorized to update health cards. Please contact the school administrator for access.";
+  "You are not authorized to update health cards.";
 
 function normalizeRoles(roles: string | string[] | undefined | null): string[] {
   if (!roles) return [];
@@ -56,8 +69,26 @@ export function roleDenialMessage(
   const isStudent = cleaned.some((role) => role === "student");
   const isNurse = cleaned.some((role) => role.includes("nurse"));
 
+  if (isNurse && flow !== "health_card" && flow !== "complaint") {
+    const label =
+      STAFF_LABELS[flow] ||
+      STUDENT_LABELS[flow] ||
+      (flow === "library" || flow === "library_reserve_book"
+        ? "reserve a book"
+        : null);
+    if (label) {
+      return `You are not authorised to ${label}.`;
+    }
+  }
+
   if (HEALTH_CARD_FLOWS.has(flow)) {
     return isNurse ? null : HEALTH_CARD_UNAUTHORIZED_MESSAGE;
+  }
+
+  if (REQUISITION_FLOWS.has(flow)) {
+    return isHmRole(cleaned)
+      ? null
+      : "You are not authorised to create a requisition request.";
   }
 
   const staffLabel = STAFF_LABELS[flow];
