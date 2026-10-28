@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { TableData } from "./types";
 import {
-  downloadTableCsv,
+  downloadTableXls,
   formatColumnHeader,
 } from "./utils/exportTableCsv";
 import { statusTone } from "./utils/statusPill";
@@ -66,7 +66,7 @@ const ragRowClass: Record<string, string> = {
 
 export default function PaginatedDataTable({
   tableData,
-  downloadFilename = "query-results.csv",
+  downloadFilename = "query-results.xls",
   showDownload = true,
   selection,
 }: PaginatedDataTableProps) {
@@ -150,9 +150,9 @@ export default function PaginatedDataTable({
               <button
                 type="button"
                 className="paginated-table-btn paginated-table-btn-primary"
-                onClick={() => downloadTableCsv(rows, displayColumns, downloadFilename)}
+                onClick={() => downloadTableXls(rows, displayColumns, downloadFilename)}
               >
-                Download CSV
+                Download .xls
               </button>
             ) : null}
           </div>
