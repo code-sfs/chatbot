@@ -32,6 +32,15 @@ const STUDENT_LABELS: Record<string, string> = {
 const HEALTH_CARD_FLOWS = new Set(["health_card"]);
 const REQUISITION_FLOWS = new Set(["requisition", "requisition_request"]);
 
+/** Matches backend FINANCE_ALLOWED_FLOWS (+ UI aliases). */
+const FINANCE_ALLOWED_FLOWS = new Set([
+  "leave",
+  "leave_approval",
+  "library",
+  "library_reserve_book",
+  "complaint",
+]);
+
 function isHmRole(roles: string[]): boolean {
   return roles.some(
     (role) =>
@@ -60,6 +69,25 @@ function normalizeRoles(roles: string | string[] | undefined | null): string[] {
     .filter(Boolean);
 }
 
+function flowLabel(flow: string): string | null {
+  return (
+    STAFF_LABELS[flow] ||
+    STUDENT_LABELS[flow] ||
+    (flow === "library" || flow === "library_reserve_book"
+      ? "reserve a book"
+      : flow === "complaint"
+        ? "file a complaint"
+        : null)
+  );
+}
+
+/** Matches persona_config finance rule: roles containing finance or account. */
+function isFinancePersona(roles: string[]): boolean {
+  return roles.some(
+    (role) => role.includes("finance") || role.includes("account"),
+  );
+}
+
 export function roleDenialMessage(
   flow: string | undefined | null,
   roles: string | string[] | undefined | null,
@@ -70,12 +98,16 @@ export function roleDenialMessage(
   const isNurse = cleaned.some((role) => role.includes("nurse"));
 
   if (isNurse && flow !== "health_card" && flow !== "complaint") {
-    const label =
-      STAFF_LABELS[flow] ||
-      STUDENT_LABELS[flow] ||
-      (flow === "library" || flow === "library_reserve_book"
-        ? "reserve a book"
-        : null);
+    const label = flowLabel(flow);
+    if (label) {
+      return `You are not authorised to ${label}.`;
+    }
+  }
+
+  // Finance/account: only leave, staff leave approval, library, complaint.
+  // Principal / teacher / other staff are unchanged (finance keywords only).
+  if (isFinancePersona(cleaned) && !FINANCE_ALLOWED_FLOWS.has(flow)) {
+    const label = flowLabel(flow);
     if (label) {
       return `You are not authorised to ${label}.`;
     }
