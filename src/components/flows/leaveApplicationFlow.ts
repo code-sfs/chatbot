@@ -224,17 +224,22 @@ function getVoiceMessageForResponse(botText: string): string | null {
     return generateSpokenSummary(text);
   }
 
+  // Known date: half day, full day, or long leave
+  if (
+    lowerText.includes("is this a half day, full day, or long leave") ||
+    lowerText.includes("is this a half day or full day")
+  ) {
+    return lowerText.includes("long leave")
+      ? "Is this a Half Day, Full Day, or Long Leave?"
+      : "Is this a Half Day or Full Day leave?";
+  }
+
   // Duration prompt
   if (
     lowerText.includes("half day, full day, or long leave") ||
     lowerText.includes("half day / full day / long leave")
   ) {
     return LEAVE_VOICE_MESSAGES.DURATION_PROMPT;
-  }
-
-  // Half or Full day question (new smart flow)
-  if (lowerText.includes("is this a half day or full day")) {
-    return "Is this a Half Day or Full Day leave?";
   }
 
   // Station status question
