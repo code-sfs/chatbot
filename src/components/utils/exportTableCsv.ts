@@ -55,6 +55,9 @@ function normalizeXlsFilename(filename: string): string {
   if (/\.xlsx$/i.test(trimmed)) {
     return trimmed.replace(/\.xlsx$/i, ".xls");
   }
+  if (/\.csv$/i.test(trimmed)) {
+    return trimmed.replace(/\.csv$/i, ".xls");
+  }
   return `${trimmed}.xls`;
 }
 
