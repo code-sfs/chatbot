@@ -59,6 +59,7 @@ function renderQueryTableBlock(
         actionType={msg.action_type}
         userId={options.userId}
         getErpContext={options.getErpContext}
+        messageTemplate={msg.message_template}
         sent={msg.hybrid_sent}
         onSent={(answer) => {
           options.setChatHistory((prev) => {

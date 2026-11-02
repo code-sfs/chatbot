@@ -106,6 +106,7 @@ export default function VoiceResponseCard({
                 actionType={msg.action_type}
                 userId={userId}
                 getErpContext={getErpContext}
+                messageTemplate={msg.message_template}
                 sent={msg.hybrid_sent}
                 onSent={(answer) => {
                   setChatHistory((prev) => {

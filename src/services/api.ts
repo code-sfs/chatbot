@@ -83,6 +83,10 @@ interface QueryHandlerResponse {
     action_type?: string;
     hybrid_catalog_id?: string;
     hybrid_row_count?: number;
+    message_template?: {
+      subject?: string;
+      body?: string;
+    };
     suggested_questions?: import("../components/types").SuggestedQuestion[];
   };
   message?: string;
@@ -95,6 +99,10 @@ export interface HybridSendRequest {
   bearer_token?: string;
   academic_session?: string;
   branch_token?: string;
+  message_template?: {
+    subject?: string;
+    body?: string;
+  };
 }
 
 export interface HybridSendResponse {

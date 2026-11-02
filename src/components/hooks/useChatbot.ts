@@ -2615,6 +2615,7 @@ export function useChatbot({
               action_type: data.data?.action_type,
               hybrid_catalog_id: data.data?.hybrid_catalog_id,
               hybrid_row_count: data.data?.hybrid_row_count,
+              message_template: data.data?.message_template,
               suggested_questions: data.data?.suggested_questions,
             
             },

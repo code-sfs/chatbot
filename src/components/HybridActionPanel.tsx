@@ -13,6 +13,36 @@ const ROW_ID_KEYS = [
   "_id",
 ] as const;
 
+export type HybridMessageTemplate = {
+  subject?: string;
+  body?: string;
+};
+
+
+const PLACEHOLDER_LABELS: Array<{ token: string; label: string }> = [
+  { token: "{teacher_name}", label: "Teacher" },
+  { token: "{student_name}", label: "Student" },
+];
+
+function toFriendlyText(text: string): string {
+  let out = String(text || "");
+  for (const { token, label } of PLACEHOLDER_LABELS) {
+    out = out.split(token).join(label);
+  }
+  return out;
+}
+
+/** Put catalog tokens back before send when the original template used them. */
+function toSendText(text: string, originalField: string): string {
+  let out = String(text || "");
+  const original = String(originalField || "");
+  for (const { token, label } of PLACEHOLDER_LABELS) {
+    if (!original.includes(token)) continue;
+    out = out.replace(new RegExp(`\\b${label}\\b`, "g"), token);
+  }
+  return out;
+}
+
 export function getHybridRowId(
   row: Record<string, unknown>,
   index: number,
@@ -42,6 +72,7 @@ export interface HybridActionPanelProps {
   actionType?: string;
   userId: string;
   getErpContext: () => { academic_session: string; branch_token: string };
+  messageTemplate?: HybridMessageTemplate;
   sent?: boolean;
   onSent: (answer: string) => void;
   onError: (message: string) => void;
@@ -53,6 +84,7 @@ export default function HybridActionPanel({
   actionType,
   userId,
   getErpContext,
+  messageTemplate,
   sent = false,
   onSent,
   onError,
@@ -68,12 +100,26 @@ export default function HybridActionPanel({
   );
   const [sending, setSending] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [subject, setSubject] = useState(
+    () => toFriendlyText(messageTemplate?.subject ?? ""),
+  );
+  const [body, setBody] = useState(
+    () => toFriendlyText(messageTemplate?.body ?? ""),
+  );
 
   useEffect(() => {
     setSelectedIds(new Set(allIds));
   }, [hybridSessionId, allIds]);
 
+  useEffect(() => {
+    setSubject(toFriendlyText(messageTemplate?.subject ?? ""));
+    setBody(toFriendlyText(messageTemplate?.body ?? ""));
+  }, [hybridSessionId, messageTemplate?.subject, messageTemplate?.body]);
+
   const disabled = sent || sending;
+  const hasComposer = Boolean(
+    messageTemplate?.subject || messageTemplate?.body || subject || body,
+  );
 
   const toggleRow = useCallback((rowId: string) => {
     setSelectedIds((prev) => {
@@ -121,13 +167,20 @@ export default function HybridActionPanel({
     try {
       const authToken = localStorage.getItem("token");
       const { academic_session, branch_token } = getErpContext();
-      const response = await aiAPI.hybridSend({  // Frontend talks to: the API endpoint /v1/ai/hybrid-send (POST)
+      const response = await aiAPI.hybridSend({
         hybrid_session_id: hybridSessionId,
         user_id: userId,
         selected_student_ids: Array.from(selectedIds),
         bearer_token: authToken || undefined,
         academic_session,
         branch_token,
+        message_template: {
+          subject: toSendText(
+            subject.trim(),
+            messageTemplate?.subject ?? "",
+          ),
+          body: toSendText(body.trim(), messageTemplate?.body ?? ""),
+        },
       });
 
       if (response.status === "success") {
@@ -162,6 +215,37 @@ export default function HybridActionPanel({
           disabled,
         }}
       />
+
+      {hasComposer ? (
+        <div className="hybrid-message-composer">
+          <label className="hybrid-message-label" htmlFor={`hybrid-subject-${hybridSessionId}`}>
+            Subject
+          </label>
+          <input
+            id={`hybrid-subject-${hybridSessionId}`}
+            type="text"
+            className="hybrid-message-subject"
+            value={subject}
+            disabled={disabled}
+            spellCheck={false}
+            onChange={(e) => setSubject(e.target.value)}
+            placeholder="Email subject"
+          />
+          <label className="hybrid-message-label" htmlFor={`hybrid-body-${hybridSessionId}`}>
+            Message
+          </label>
+          <textarea
+            id={`hybrid-body-${hybridSessionId}`}
+            className="hybrid-message-body"
+            value={body}
+            disabled={disabled}
+            spellCheck={false}
+            onChange={(e) => setBody(e.target.value)}
+            placeholder="Email body"
+            rows={5}
+          />
+        </div>
+      ) : null}
 
       <div className="hybrid-action-footer">
         <span className="hybrid-action-footer-count">
