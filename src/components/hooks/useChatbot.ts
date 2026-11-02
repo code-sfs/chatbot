@@ -2076,42 +2076,6 @@ export function useChatbot({
         }
       }
 
-      const backendDenied =
-        classificationResult?.validation_status === "role_unauthorized" ||
-        classificationResult?.flow === "unauthorized";
-      const denialMessage = backendDenied
-        ? classificationResult?.message ||
-          roleDenialMessage(
-            classificationResult?.flow || targetFlow,
-            userRolesList,
-          )
-        : roleDenialMessage(targetFlow, userRolesList);
-      if (denialMessage && !flowToExitOnCommand) {
-        const spoken =
-          (backendDenied && classificationResult?.tts_text) ||
-          denialMessage.replace(/^🚫\s*/, "");
-        setChatHistory((prev) => [
-          ...prev,
-          { type: "bot", text: denialMessage },
-        ]);
-        setDetectedFlow(null);
-        const inActionFlow =
-          activeFlowRef.current !== "none" &&
-          activeFlowRef.current !== "query" &&
-          activeFlowRef.current !== "faq";
-        if (inActionFlow) {
-          handleFlowExit({ newSession: false, skipTTSInterrupt: true });
-        }
-        if (
-          isVoiceTriggeredForThisRequest ||
-          isActiveVoiceSession(isVoiceTriggeredForThisRequest)
-        ) {
-          void handlePlayTTS(-1, spoken, true);
-        }
-        setIsProcessing(false);
-        return;
-      }
-
       // Set userOptionSelected to true when auto-routing detects a flow
       setUserOptionSelected(true);
 
@@ -2400,6 +2364,48 @@ export function useChatbot({
       }
     } else {
       console.log("[Routing] Using current activeFlow:", activeFlow);
+    }
+
+    // Shared role gate for every route (classify, disambiguation, stay-in-flow).
+    // Access rules live only in actionFlowAccess / action_flow_access — call them here.
+    if (!flowToExitOnCommand) {
+      const backendDenied =
+        classificationResult?.validation_status === "role_unauthorized" ||
+        classificationResult?.flow === "unauthorized";
+      const denialMessage = backendDenied
+        ? classificationResult?.message ||
+          roleDenialMessage(
+            classificationResult?.flow === "unauthorized"
+              ? targetFlow
+              : classificationResult?.flow || targetFlow,
+            userRolesList,
+          )
+        : roleDenialMessage(targetFlow, userRolesList);
+      if (denialMessage) {
+        const spoken =
+          (backendDenied && classificationResult?.tts_text) ||
+          denialMessage.replace(/^🚫\s*/, "");
+        setChatHistory((prev) => [
+          ...prev,
+          { type: "bot", text: denialMessage },
+        ]);
+        setDetectedFlow(null);
+        const inActionFlow =
+          activeFlowRef.current !== "none" &&
+          activeFlowRef.current !== "query" &&
+          activeFlowRef.current !== "faq";
+        if (inActionFlow) {
+          handleFlowExit({ newSession: false, skipTTSInterrupt: true });
+        }
+        if (
+          isVoiceTriggeredForThisRequest ||
+          isActiveVoiceSession(isVoiceTriggeredForThisRequest)
+        ) {
+          void handlePlayTTS(-1, spoken, true);
+        }
+        setIsProcessing(false);
+        return;
+      }
     }
 
     // IMPORTANT: Always route marks messages to marks handler, including
