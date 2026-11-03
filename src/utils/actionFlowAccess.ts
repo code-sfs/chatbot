@@ -123,6 +123,11 @@ export function roleDenialMessage(
       : "You are not authorised to create a requisition request.";
   }
 
+  // HM may approve teacher/staff leave, but not student leave.
+  if (flow === "student_leave_approval" && isHmRole(cleaned)) {
+    return "You are not authorised to approve student leave.";
+  }
+
   const staffLabel = STAFF_LABELS[flow];
   if (staffLabel) {
     if (cleaned.length === 0 || isStudent) {

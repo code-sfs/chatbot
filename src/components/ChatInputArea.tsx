@@ -98,6 +98,7 @@ export default function ChatInputArea({
   const canUpload =
     activeFlow === "attendance" ||
     activeFlow === "assignment" ||
+    activeFlow === "message" ||
     activeFlow === "submission";
 
   useEffect(() => {
@@ -286,52 +287,19 @@ export default function ChatInputArea({
           />
           {canUpload && (
             <motion.label
-              htmlFor={
-                activeFlow === "attendance" ||
-                  activeFlow === "assignment" ||
-                  activeFlow === "submission"
-                  ? "file-upload-input"
-                  : undefined
-              }
-              className={`chatbot-btn upload-btn w-10 h-10 sm:w-12 sm:h-12 text-lg sm:text-xl ${activeFlow === "attendance" ||
-                  activeFlow === "assignment" ||
-                  activeFlow === "submission"
-                  ? "cursor-pointer"
-                  : "cursor-not-allowed"
-                }`}
-              whileHover={
-                activeFlow === "attendance" ||
-                  activeFlow === "assignment" ||
-                  activeFlow === "submission"
-                  ? { scale: 1.08, y: -2 }
-                  : {}
-              }
-              whileTap={
-                activeFlow === "attendance" ||
-                  activeFlow === "assignment" ||
-                  activeFlow === "submission"
-                  ? { scale: 0.95 }
-                  : {}
-              }
+              htmlFor="file-upload-input"
+              className="chatbot-btn upload-btn w-10 h-10 sm:w-12 sm:h-12 text-lg sm:text-xl cursor-pointer"
+              whileHover={{ scale: 1.08, y: -2 }}
+              whileTap={{ scale: 0.95 }}
               title={
                 activeFlow === "attendance"
                   ? "Upload Excel or Image"
                   : activeFlow === "assignment"
                     ? "Upload Assignment File (PDF, DOCX, Image)"
-                    : activeFlow === "submission"
-                      ? "Upload Submission File"
-                      : "Enable assignment or attendance flow to upload"
+                    : activeFlow === "message"
+                      ? "Upload Message File (PDF, DOCX, Image)"
+                      : "Upload Submission File"
               }
-              onClick={(e) => {
-                if (
-                  activeFlow !== "attendance" &&
-                  activeFlow !== "assignment" &&
-                  activeFlow !== "submission"
-                ) {
-                  e.preventDefault();
-                  e.stopPropagation();
-                }
-              }}
             >
               <FiUpload />
             </motion.label>
