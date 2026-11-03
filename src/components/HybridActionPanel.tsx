@@ -74,6 +74,8 @@ export interface HybridActionPanelProps {
   getErpContext: () => { academic_session: string; branch_token: string };
   messageTemplate?: HybridMessageTemplate;
   sent?: boolean;
+  
+  sentMessage?: string;
   onSent: (answer: string) => void;
   onError: (message: string) => void;
 }
@@ -86,6 +88,7 @@ export default function HybridActionPanel({
   getErpContext,
   messageTemplate,
   sent = false,
+  sentMessage,
   onSent,
   onError,
 }: HybridActionPanelProps) {
@@ -99,7 +102,8 @@ export default function HybridActionPanel({
     () => new Set(allIds),
   );
   const [sending, setSending] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
+  /** Step 2: edit message + confirm — composer is hidden until Send is clicked. */
+  const [showComposeStep, setShowComposeStep] = useState(false);
   const [subject, setSubject] = useState(
     () => toFriendlyText(messageTemplate?.subject ?? ""),
   );
@@ -109,6 +113,7 @@ export default function HybridActionPanel({
 
   useEffect(() => {
     setSelectedIds(new Set(allIds));
+    setShowComposeStep(false);
   }, [hybridSessionId, allIds]);
 
   useEffect(() => {
@@ -161,7 +166,7 @@ export default function HybridActionPanel({
       return;
     }
 
-    setShowConfirm(false);
+    setShowComposeStep(false);
     setSending(true);
 
     try {
@@ -216,41 +221,10 @@ export default function HybridActionPanel({
         }}
       />
 
-      {hasComposer ? (
-        <div className="hybrid-message-composer">
-          <label className="hybrid-message-label" htmlFor={`hybrid-subject-${hybridSessionId}`}>
-            Subject
-          </label>
-          <input
-            id={`hybrid-subject-${hybridSessionId}`}
-            type="text"
-            className="hybrid-message-subject"
-            value={subject}
-            disabled={disabled}
-            spellCheck={false}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Email subject"
-          />
-          <label className="hybrid-message-label" htmlFor={`hybrid-body-${hybridSessionId}`}>
-            Message
-          </label>
-          <textarea
-            id={`hybrid-body-${hybridSessionId}`}
-            className="hybrid-message-body"
-            value={body}
-            disabled={disabled}
-            spellCheck={false}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Email body"
-            rows={5}
-          />
-        </div>
-      ) : null}
-
       <div className="hybrid-action-footer">
         <span className="hybrid-action-footer-count">
           {sent
-            ? "Message sent."
+            ? sentMessage?.trim() || "Message sent."
             : `${selectedIds.size} of ${rows.length} selected`}
         </span>
         {!sent ? (
@@ -275,7 +249,7 @@ export default function HybridActionPanel({
               type="button"
               className="paginated-table-btn hybrid-send-btn"
               disabled={disabled || selectedIds.size === 0}
-              onClick={() => setShowConfirm(true)}
+              onClick={() => setShowComposeStep(true)}
             >
               {sending ? "Sending…" : sendButtonLabel(actionType)}
             </button>
@@ -283,19 +257,61 @@ export default function HybridActionPanel({
         ) : null}
       </div>
 
-      {showConfirm ? (
+      {showComposeStep ? (
         <div className="hybrid-confirm-overlay" role="dialog" aria-modal="true">
-          <div className="hybrid-confirm-dialog">
+          <div
+            className={
+              hasComposer
+                ? "hybrid-confirm-dialog hybrid-confirm-dialog--compose"
+                : "hybrid-confirm-dialog"
+            }
+          >
             <p className="hybrid-confirm-text">
               Send to {selectedIds.size} selected student
               {selectedIds.size === 1 ? "" : "s"}?
             </p>
+            {hasComposer ? (
+              <div className="hybrid-message-composer hybrid-message-composer--dialog">
+                <label
+                  className="hybrid-message-label"
+                  htmlFor={`hybrid-subject-${hybridSessionId}`}
+                >
+                  Subject
+                </label>
+                <input
+                  id={`hybrid-subject-${hybridSessionId}`}
+                  type="text"
+                  className="hybrid-message-subject"
+                  value={subject}
+                  disabled={sending}
+                  spellCheck={false}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Email subject"
+                />
+                <label
+                  className="hybrid-message-label"
+                  htmlFor={`hybrid-body-${hybridSessionId}`}
+                >
+                  Message
+                </label>
+                <textarea
+                  id={`hybrid-body-${hybridSessionId}`}
+                  className="hybrid-message-body"
+                  value={body}
+                  disabled={sending}
+                  spellCheck={false}
+                  onChange={(e) => setBody(e.target.value)}
+                  placeholder="Email body"
+                  rows={5}
+                />
+              </div>
+            ) : null}
             <div className="hybrid-confirm-actions">
               <button
                 type="button"
                 className="paginated-table-btn"
                 disabled={sending}
-                onClick={() => setShowConfirm(false)}
+                onClick={() => setShowComposeStep(false)}
               >
                 Cancel
               </button>
@@ -305,7 +321,7 @@ export default function HybridActionPanel({
                 disabled={sending}
                 onClick={() => void handleConfirmSend()}
               >
-                Confirm send
+                {sending ? "Sending…" : "Confirm send"}
               </button>
             </div>
           </div>

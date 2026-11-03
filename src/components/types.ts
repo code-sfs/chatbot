@@ -149,6 +149,8 @@ export interface ChatMessage {
   hybrid_catalog_id?: string;
   hybrid_row_count?: number;
   hybrid_sent?: boolean;
+  
+  hybrid_send_result?: string;
   message_template?: {
     subject?: string;
     body?: string;

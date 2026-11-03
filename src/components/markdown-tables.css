@@ -234,6 +234,15 @@
     gap: 0.375rem;
 }
 
+.hybrid-message-composer--dialog {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
 .hybrid-message-label {
     font-size: 0.75rem;
     font-weight: 600;
@@ -289,6 +298,8 @@
     font-size: 0.875rem;
     font-weight: 500;
     color: #475569;
+    flex: 1 1 12rem;
+    line-height: 1.4;
 }
 
 .hybrid-action-footer-actions {
@@ -343,7 +354,12 @@
     border-radius: 0.75rem;
     padding: 1.25rem 1.5rem;
     max-width: 22rem;
+    width: calc(100% - 2rem);
     box-shadow: 0 10px 40px rgba(15, 23, 42, 0.18);
+}
+
+.hybrid-confirm-dialog--compose {
+    max-width: 32rem;
 }
 
 .hybrid-confirm-text {
