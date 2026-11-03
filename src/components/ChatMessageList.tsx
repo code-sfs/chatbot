@@ -59,15 +59,18 @@ function renderQueryTableBlock(
         actionType={msg.action_type}
         userId={options.userId}
         getErpContext={options.getErpContext}
+        messageTemplate={msg.message_template}
         sent={msg.hybrid_sent}
+        sentMessage={msg.hybrid_send_result}
         onSent={(answer) => {
           options.setChatHistory((prev) => {
             const next = [...prev];
-            next[messageIdx] = { ...next[messageIdx], hybrid_sent: true };
-            return [
-              ...next,
-              { type: "bot", answer, activeTab: "answer" as const },
-            ];
+            next[messageIdx] = {
+              ...next[messageIdx],
+              hybrid_sent: true,
+              hybrid_send_result: answer,
+            };
+            return next;
           });
         }}
         onError={(message) => {
