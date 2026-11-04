@@ -489,6 +489,7 @@ export default function ManagerBriefDashboard({
   return (
     <div className="manager-brief-dashboard manager-brief-compact">
       <div className="mb-compact-body">
+        {kpiCards.length ? <KpiCardRow cards={kpiCards} /> : null}
         {intro ? <p className="bp-narrative">{intro}</p> : null}
         {narrativeBullets.length ? (
           <SummaryBullets bullets={narrativeBullets} />
@@ -540,8 +541,6 @@ export default function ManagerBriefDashboard({
               ) : null}
             </div>
           ) : null}
-
-          {kpiCards.length ? <KpiCardRow cards={kpiCards} /> : null}
 
           {data.bar_chart ? <L1UtilisationBarChart chart={data.bar_chart} /> : null}
 
