@@ -44,6 +44,38 @@ function isHmRole(roles: string[]): boolean {
   );
 }
 
+function isHrRole(roles: string[]): boolean {
+  return roles.some(
+    (role) =>
+      role === "hr" || /\bhr\b/.test(role) || role.includes("human resource"),
+  );
+}
+
+const TEACHING_FLOWS = new Set([
+  "assignment_create",
+  "assignment",
+  "review_submission",
+  "review",
+  "marks_entry",
+  "marks",
+  "teacher_diary",
+  "course_progress",
+]);
+
+const ATTENDANCE_FLOWS = new Set([
+  "attendance",
+  "voice_attendance",
+  "full_voice_attendance",
+]);
+
+function isTeachingRole(roles: string[]): boolean {
+  return roles.some((role) => /\bteacher\b/.test(role));
+}
+
+function isClassTeacherRole(roles: string[]): boolean {
+  return roles.some((role) => role.includes("class teacher"));
+}
+
 export const HEALTH_CARD_UNAUTHORIZED_MESSAGE =
   "You are not authorized to update health cards.";
 
@@ -91,9 +123,21 @@ export function roleDenialMessage(
       : "You are not authorised to create a requisition request.";
   }
 
-  // HM may approve teacher/staff leave, but not student leave.
-  if (flow === "student_leave_approval" && isHmRole(cleaned)) {
+  // HM and HR may approve teacher/staff leave, but not student leave.
+  if (flow === "student_leave_approval" && (isHmRole(cleaned) || isHrRole(cleaned))) {
     return "You are not authorised to approve student leave.";
+  }
+
+  // Same role text as the backend. Principal, HM, and HR pass only when a
+  // teacher role is also on the login. Attendance needs Class Teacher.
+  if (ATTENDANCE_FLOWS.has(flow) && !isClassTeacherRole(cleaned)) {
+    return "You are not authorised to mark attendance.";
+  }
+  if (TEACHING_FLOWS.has(flow) && !isTeachingRole(cleaned)) {
+    const teachingLabel = STAFF_LABELS[flow];
+    if (teachingLabel) {
+      return `You are not authorised to ${teachingLabel}.`;
+    }
   }
 
   const staffLabel = STAFF_LABELS[flow];
