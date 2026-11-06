@@ -321,6 +321,7 @@ function BriefActionButton({
       <button
         type="button"
         className="mb-compact-btn mb-compact-btn-download"
+        title="Download Excel (.xls)"
         onClick={() => {
           if (multiTables?.length) {
             downloadMultiTableXls(multiTables, action.filename || "query-results.xls");
@@ -335,7 +336,7 @@ function BriefActionButton({
         }}
       >
         <FiDownload className="mb-compact-btn-icon" />
-        {action.label}
+        Download file
       </button>
     );
   }
@@ -372,7 +373,7 @@ export default function ManagerBriefDashboard({
       data.header.meta?.trim(),
   );
   const [showBreakdown, setShowBreakdown] = useState(false);
-  const [showDetails, setShowDetails] = useState(false);
+  const [showDetails, setShowDetails] = useState(false); //list not shown yet, it is shown when the user clicks the view button
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const kpiCards = (data.kpi_strip ?? []).map((k) => ({
@@ -409,6 +410,16 @@ export default function ManagerBriefDashboard({
         };
       });
   }, [data.detail]);
+// backend sent two tables.FE turns them into multitableblocks(count+list). split the first table vs the rest
+  const pinnedTableCount = Math.max(
+    0,
+    Math.min(
+      Number(data.detail?.type === "tables" ? data.detail.pinned_count ?? 0 : 0) || 0,
+      multiTableBlocks.length,
+    ),
+  );
+  const pinnedTableBlocks = multiTableBlocks.slice(0, pinnedTableCount);
+  const collapsibleTableBlocks = multiTableBlocks.slice(pinnedTableCount);
 
   const selected = useMemo(
     () => data.sections.find((c) => c.id === selectedId),
@@ -443,37 +454,51 @@ export default function ManagerBriefDashboard({
       : null;
 
   const hasTableContent = Boolean(tableDetail || multiTableBlocks.length);
+  const hasCollapsibleTableContent = Boolean(
+    tableDetail || collapsibleTableBlocks.length,
+  );
   const compactActions = useMemo(() => {
     const existing = data.actions ?? [];
-    if (existing.length) return existing;
-    const fallback: ManagerBriefAction[] = [];
-    if (hasTableContent) {
-      fallback.push({
-        id: "download_xls",
-        label: "Download .xls",
-        filename: "query-results.xls",
-      });
+    // Brief bar only: View + Download. Table Filter lives on PaginatedDataTable after View.
+    const actions: ManagerBriefAction[] = (existing.length ? [...existing] : [])
+      .filter((a) => a.id !== "filter_table");
+    if (!existing.length) {
+      if (
+        hasCollapsibleTableContent ||
+        kpiCards.length ||
+        data.bar_chart ||
+        data.sections.length ||
+        data.decisions.length
+      ) {
+        actions.push({ id: "view_table", label: "View" });
+      }
+      if (hasTableContent) {
+        actions.push({
+          id: "download_xls",
+          label: "Download file",
+          filename: "query-results.xls",
+        });
+      }
     }
-    if (
-      hasTableContent ||
-      kpiCards.length ||
-      data.bar_chart ||
-      data.sections.length ||
-      data.decisions.length
-    ) {
-      fallback.push({ id: "view_table", label: "View" });
-    }
-    return fallback;
+
+    // Always: View → Download (then any other actions).
+    const order = ["view_table", "download_xls"];
+    const rank = (id: string) => {
+      const i = order.indexOf(id);
+      return i === -1 ? order.length : i;
+    };
+    return [...actions].sort((a, b) => rank(a.id) - rank(b.id));
   }, [
     data.actions,
     data.bar_chart,
     data.decisions.length,
     data.sections.length,
+    hasCollapsibleTableContent,
     hasTableContent,
     kpiCards.length,
   ]);
   const hasExpandableDetails = Boolean(
-    hasTableContent ||
+    hasCollapsibleTableContent ||
       kpiCards.length ||
       data.bar_chart ||
       data.sections.length ||
@@ -503,6 +528,27 @@ export default function ManagerBriefDashboard({
         ) : null}
       </div>
 
+      {pinnedTableBlocks.length ? (
+        <div className="bp-table-detail mb-compact-pinned-tables">
+          {pinnedTableBlocks.map((block, index) => (
+            <div
+              key={block.title || `pinned-table-${index}`}
+              className="bp-table-block"
+            >
+              {block.title ? (
+                <h4 className="bp-table-title">{block.title}</h4>
+              ) : null}
+              <PaginatedDataTable
+                tableData={block.tableDetail}
+                downloadFilename="manager-brief-results.csv"
+                showDownload={false}
+                enableColumnFilter={false}
+              />
+            </div>
+          ))}
+        </div>
+      ) : null}
+
       {compactActions.length ? (
         <div className="mb-compact-actions">
           {compactActions.map((action) => (
@@ -519,14 +565,14 @@ export default function ManagerBriefDashboard({
                     }))
                   : undefined
               }
-              onViewTable={() => setShowDetails((v) => !v)}
+              onViewTable={() => setShowDetails((open) => !open)}
               viewActive={showDetails}
             />
           ))}
         </div>
       ) : null}
 
-      {showDetails && hasExpandableDetails ? (
+      {showDetails && hasExpandableDetails ? (  // only show the details section if the user has clicked the view button and there is content to show
         <div className="mb-compact-details">
           {showHeader ? (
             <div className="bp-header">
@@ -607,11 +653,14 @@ export default function ManagerBriefDashboard({
             </>
           ) : null}
 
-          {hasTableContent ? (
+          {hasCollapsibleTableContent ? (
             <div className="bp-table-detail">
-              {multiTableBlocks.length ? (
-                multiTableBlocks.map((block) => (
-                  <div key={block.title || "table"} className="bp-table-block">
+              {collapsibleTableBlocks.length ? (
+                collapsibleTableBlocks.map((block, index) => (
+                  <div
+                    key={block.title || `table-${index}`}
+                    className="bp-table-block"
+                  >
                     {block.title ? (
                       <h4 className="bp-table-title">{block.title}</h4>
                     ) : null}

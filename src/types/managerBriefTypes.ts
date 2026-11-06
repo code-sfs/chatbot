@@ -45,7 +45,7 @@ export interface ManagerBriefBarChart {
 }
 
 export interface ManagerBriefAction {
-  id: "download_xls" | "view_table" | string;
+  id: "download_xls" | "view_table" | "filter_table" | string;
   label: string;
   filename?: string;
 }
@@ -80,7 +80,8 @@ export interface ManagerBriefPayload {
     tables?: ManagerBriefTableBlock[];
     row_status_key?: string;
     collapsed_default?: boolean;
-    
+    /** First N multi-tables stay visible; the rest open on View. */
+    pinned_count?: number;
     merge_column?: string;
   };
 }

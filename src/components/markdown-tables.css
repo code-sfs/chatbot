@@ -87,6 +87,12 @@
     color: #c2413b;
 }
 
+
+.status-pill--holiday {
+    background: #f1ebe4;
+    color: #6b5748;
+}
+
 .markdown-table-container td.merge-group-cell {
     vertical-align: middle;
     text-align: center;
@@ -217,6 +223,211 @@
 .paginated-table-btn-primary:hover:not(:disabled) {
     background: #1d4ed8;
     border-color: #1d4ed8;
+}
+
+.table-meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 0.75rem;
+    margin-bottom: 0.55rem;
+}
+
+.table-meta-count {
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: #6b5748;
+}
+
+.table-meta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    margin-left: auto;
+}
+
+.table-meta-btn {
+    min-height: 34px;
+    padding: 0.35rem 0.8rem;
+    border-radius: 999px;
+    border: 1px solid rgba(31, 122, 69, 0.28);
+    background: #e7f6ee;
+    color: #1f7a45;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+.table-meta-btn-icon {
+    font-size: 0.95rem;
+    flex-shrink: 0;
+}
+
+.table-meta-btn:hover {
+    background: #d8f0e3;
+    border-color: rgba(31, 122, 69, 0.4);
+}
+
+.table-meta-btn-filter.is-active,
+.table-meta-btn.is-active {
+    background: #1f7a45;
+    border-color: #1f7a45;
+    color: #fff;
+}
+
+.table-meta-btn-download {
+    background: #e7f6ee;
+    border-color: rgba(31, 122, 69, 0.28);
+    color: #1f7a45;
+}
+
+.table-meta-btn-download:hover {
+    background: #d8f0e3;
+    border-color: rgba(31, 122, 69, 0.4);
+}
+
+.table-filter-panel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.55rem 0.7rem;
+    margin-bottom: 0.7rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 12px;
+    background: #faf6f1;
+    border: 1px solid rgba(92, 64, 48, 0.1);
+}
+
+.table-filter-field {
+    display: inline-flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.table-filter-field-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #8a7464;
+    white-space: nowrap;
+}
+
+.table-filter-select,
+.table-filter-input {
+    min-height: 32px;
+    padding: 0.3rem 0.65rem;
+    font-size: 0.8125rem;
+    border-radius: 8px;
+    border: 1px solid rgba(92, 64, 48, 0.18);
+    background: #fff;
+    color: #3d2817;
+}
+
+.table-filter-select {
+    max-width: 12rem;
+}
+
+.table-filter-input {
+    flex: 1;
+    min-width: 10rem;
+    max-width: 16rem;
+}
+
+.table-filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.table-filter-chip {
+    min-height: 32px;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid rgba(92, 64, 48, 0.16);
+    background: #fff;
+    color: #5c4030;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.12s ease;
+}
+
+.table-filter-chip:hover {
+    background: #fff7ed;
+    border-color: #fdba74;
+}
+
+.table-filter-chip.is-active {
+    background: #e8a87c;
+    border-color: #e09868;
+    color: #3d2817;
+    transform: translateY(-1px);
+}
+
+.table-filter-empty {
+    margin: 0.5rem 0 0;
+    font-size: 0.875rem;
+    color: #6b5748;
+}
+
+.table-rows-animate tbody tr {
+    animation: table-row-in 0.22s ease;
+}
+
+@keyframes table-row-in {
+    from {
+        opacity: 0.35;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.markdown-table-container th.table-sort-th {
+    cursor: pointer;
+    user-select: none;
+    vertical-align: middle;
+}
+
+.markdown-table-container th.table-sort-th:hover,
+.markdown-table-container th.table-sort-th.is-active {
+    color: #9a3412;
+    background: #fff7ed;
+}
+
+.table-sort-th-label {
+    margin-right: 0.45rem;
+}
+
+.table-sort-caret {
+    display: inline-block;
+    width: 0;
+    height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid #b08968;
+    border-bottom: 0;
+    opacity: 0.75;
+    vertical-align: middle;
+}
+
+.table-sort-caret.is-asc {
+    border-top: 0;
+    border-bottom: 6px solid #c2410c;
+    opacity: 1;
+}
+
+.table-sort-caret.is-desc {
+    border-top: 6px solid #c2410c;
+    border-bottom: 0;
+    opacity: 1;
 }
 
 .hybrid-action-panel {
@@ -1355,37 +1566,57 @@
 }
 
 .mb-compact-btn-download {
-    background: #eef4ff;
-    border: 1px solid #c7d7fe;
-    color: #2563eb;
-    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.08);
+    background: #e7f6ee;
+    border: 1px solid rgba(31, 122, 69, 0.28);
+    color: #1f7a45;
+    box-shadow: 0 1px 2px rgba(31, 122, 69, 0.08);
 }
 
 .mb-compact-btn-download:hover {
-    background: #e0ebff;
-    border-color: #a8c4fe;
+    background: #d8f0e3;
+    border-color: rgba(31, 122, 69, 0.4);
 }
 
 .mb-compact-btn-download:active {
-    background: #d6e4ff;
+    background: #c6e8d4;
 }
 
 .mb-compact-btn-view {
-    background: #f4f4f5;
-    border: 1px solid #e4e4e7;
-    color: #3f3f46;
-    box-shadow: 0 1px 2px rgba(24, 24, 27, 0.04);
+    background: #e7f6ee;
+    border: 1px solid rgba(31, 122, 69, 0.28);
+    color: #1f7a45;
+    box-shadow: 0 1px 2px rgba(31, 122, 69, 0.08);
 }
 
 .mb-compact-btn-view:hover {
-    background: #ececee;
-    border-color: #d4d4d8;
+    background: #d8f0e3;
+    border-color: rgba(31, 122, 69, 0.4);
 }
 
 .mb-compact-btn-view:active,
 .mb-compact-btn-view.is-active {
-    background: #ece7df;
-    border-color: #d6cfc4;
+    background: #1f7a45;
+    border-color: #1f7a45;
+    color: #fff;
+}
+
+.mb-compact-btn-filter {
+    background: #e7f6ee;
+    border: 1px solid rgba(31, 122, 69, 0.28);
+    color: #1f7a45;
+    box-shadow: 0 1px 2px rgba(31, 122, 69, 0.08);
+}
+
+.mb-compact-btn-filter:hover {
+    background: #d8f0e3;
+    border-color: rgba(31, 122, 69, 0.4);
+}
+
+.mb-compact-btn-filter:active,
+.mb-compact-btn-filter.is-active {
+    background: #1f7a45;
+    border-color: #1f7a45;
+    color: #fff;
 }
 
 .mb-compact-details {
@@ -1399,12 +1630,12 @@
         min-height: 44px;
     }
     .mb-compact-btn-download:hover {
-        background: #eef4ff;
-        border-color: #c7d7fe;
+        background: #e7f6ee;
+        border-color: rgba(31, 122, 69, 0.28);
     }
     .mb-compact-btn-view:hover {
-        background: #f4f4f5;
-        border-color: #e4e4e7;
+        background: #e7f6ee;
+        border-color: rgba(31, 122, 69, 0.28);
     }
 }
 
