@@ -88,7 +88,7 @@ function renderQueryTableBlock(
       key={options.key}
       tableData={msg.table_data}
       downloadFilename={options.downloadFilename}
-      showDownload={!msg.catalog_id?.trim()}
+      showDownload={true}
     />
   );
 }

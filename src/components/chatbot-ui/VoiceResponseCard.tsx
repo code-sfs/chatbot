@@ -131,7 +131,7 @@ export default function VoiceResponseCard({
               <PaginatedDataTable
                 tableData={msg.table_data}
                 downloadFilename="query-results.csv"
-                showDownload={!msg.catalog_id?.trim()}
+                showDownload={true}
               />
             ) : null}
             {msg.visualization && !msg.hybrid_action_available ? (
