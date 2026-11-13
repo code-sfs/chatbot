@@ -221,9 +221,9 @@ export default function PaginatedDataTable({
   }, [enableColumnFilter, displayColumns, filterColumn, rows]);
 
   useEffect(() => {
-    if (!enableColumnFilter || !openFilterSignal) return;
+    if (!enableColumnFilter || !openFilterSignal || rows.length <= 7) return;
     setFilterOpen(true);
-  }, [enableColumnFilter, openFilterSignal]);
+  }, [enableColumnFilter, openFilterSignal, rows.length]);
 
   const chipValues = useMemo(() => {
     if (!filterColumn) return [];
@@ -310,7 +310,11 @@ export default function PaginatedDataTable({
     pageRowIds.some((id) => selection!.selectedIds.has(id));
 
   const hasActiveFilter = Boolean(filterText.trim());
-  const showFilterPanel = enableColumnFilter && (filterOpen || hasActiveFilter);
+  const showToolbarActions = rows.length > 7;
+  const canFilter = showToolbarActions && enableColumnFilter;
+  const canDownload = showToolbarActions && showDownload;
+  const showFilterPanel = canFilter && (filterOpen || hasActiveFilter);
+  const showMetaBar = hasActiveFilter || canFilter || canDownload;
 
   if (!displayColumns.length || !rows.length) {
     return null;
@@ -318,39 +322,44 @@ export default function PaginatedDataTable({
 
   return (
     <div className="paginated-table-wrap mt-3 w-full">
-      <div className="table-meta-bar">
-        {hasActiveFilter ? (
-          <span className="table-meta-count">
-            {`Showing ${visibleTotal} of ${rows.length}`}
-          </span>
-        ) : null}
-        <div className="table-meta-actions">
-          {enableColumnFilter ? (
-            <button
-              type="button"
-              className={`table-meta-btn table-meta-btn-filter${showFilterPanel ? " is-active" : ""}`}
-              aria-expanded={showFilterPanel}
-              onClick={() => setFilterOpen((open) => !open)}
-            >
-              <FiFilter className="table-meta-btn-icon" aria-hidden="true" />
-              Filter
-            </button>
+      {showMetaBar ? (
+        <div className="table-meta-bar">
+          {hasActiveFilter ? (
+            <span className="table-meta-count">
+              {`Showing ${visibleTotal} of ${rows.length}`}
+            </span>
           ) : null}
-          {showDownload ? (
-            <button
-              type="button"
-              className="table-meta-btn table-meta-btn-download"
-              title="Download Excel (.xls)"
-              onClick={() =>
-                downloadTableXls(rows, displayColumns, downloadFilename)
-              }
-            >
-              <FiDownload className="table-meta-btn-icon" aria-hidden="true" />
-              Download file
-            </button>
+          {canFilter || canDownload ? (
+            <div className="table-meta-actions">
+              {canFilter ? (
+                <button
+                  type="button"
+                  className={`table-meta-btn table-meta-btn-icon-only table-meta-btn-filter${showFilterPanel ? " is-active" : ""}`}
+                  aria-label="Filter"
+                  title="Filter"
+                  aria-expanded={showFilterPanel}
+                  onClick={() => setFilterOpen((open) => !open)}
+                >
+                  <FiFilter className="table-meta-btn-icon" aria-hidden="true" />
+                </button>
+              ) : null}
+              {canDownload ? (
+                <button
+                  type="button"
+                  className="table-meta-btn table-meta-btn-icon-only table-meta-btn-download"
+                  aria-label="Download Excel (.xls)"
+                  title="Download Excel (.xls)"
+                  onClick={() =>
+                    downloadTableXls(rows, displayColumns, downloadFilename)
+                  }
+                >
+                  <FiDownload className="table-meta-btn-icon" aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
-      </div>
+      ) : null}
 
       {showFilterPanel ? (
         <div className="table-filter-panel">

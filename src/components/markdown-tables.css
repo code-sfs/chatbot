@@ -93,6 +93,11 @@
     color: #6b5748;
 }
 
+.status-pill--late {
+    background: #eef2ff;
+    color: #4338ca;
+}
+
 .markdown-table-container td.merge-group-cell {
     vertical-align: middle;
     text-align: center;
@@ -267,6 +272,12 @@
 .table-meta-btn-icon {
     font-size: 0.95rem;
     flex-shrink: 0;
+}
+
+.table-meta-btn-icon-only {
+    width: 34px;
+    padding: 0;
+    justify-content: center;
 }
 
 .table-meta-btn:hover {
