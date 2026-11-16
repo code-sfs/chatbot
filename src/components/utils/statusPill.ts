@@ -1,4 +1,4 @@
-export type StatusTone = "present" | "leave" | "absent" | "holiday";
+export type StatusTone = "present" | "leave" | "absent" | "holiday" | "late";
 
 /** Map a single table cell to a status pill. Dates, times, and long text stay plain. */
 export function statusTone(text: string): StatusTone | null {
@@ -20,6 +20,14 @@ export function statusTone(text: string): StatusTone | null {
     value.includes("half-day")
   ) {
     return "leave";
+  }
+  if (
+    value === "late" ||
+    value.includes("late coming") ||
+    value.includes("latecoming") ||
+    value.startsWith("late ")
+  ) {
+    return "late";
   }
   return null;
 }
